@@ -110,11 +110,18 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .empty-state span{font-size:3rem}
 .empty-state p{font-size:.9rem}
 
+/* ── BACK BTN ── */
+.back-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:4px 8px 4px 0;display:none;align-items:center;flex-shrink:0}
+
 /* ── MOBILE ── */
 @media(max-width:640px){
-  .sidebar{width:100%;min-width:unset;display:none}
-  .sidebar.mobile-show{display:flex;position:fixed;inset:0;z-index:100}
-  .chat-panel{width:100%}
+  .login-card{width:92%;padding:36px 24px}
+  #app.show{position:relative;overflow:hidden}
+  .sidebar{position:absolute;inset:0;z-index:10;width:100%;min-width:unset;transform:translateX(0);transition:transform .25s ease}
+  .sidebar.hidden{transform:translateX(-100%);pointer-events:none}
+  .chat-panel{position:absolute;inset:0;width:100%;transform:translateX(100%);transition:transform .25s ease}
+  .chat-panel.visible{transform:translateX(0)}
+  .back-btn{display:flex !important}
 }
 </style>
 </head>
@@ -158,6 +165,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   <!-- CHAT -->
   <div class="chat-panel">
     <div class="chat-panel-header" id="chatHeader">
+      <button id="backBtn" class="back-btn" style="display:none">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
       <div class="chat-panel-avatar" id="headerAvatar">💬</div>
       <div class="chat-panel-info">
         <div class="chat-panel-name" id="headerName">Global Chat</div>
@@ -432,7 +442,10 @@ function renderConvList() {
   convList.innerHTML = html;
 
   convList.querySelectorAll('.conv-item').forEach(el => {
-    el.addEventListener('click', () => openConv(el.dataset.conv));
+    el.addEventListener('click', () => {
+      openConv(el.dataset.conv);
+      showChat();
+    });
   });
 }
 
@@ -497,6 +510,33 @@ searchInput.addEventListener('input', () => {
   searchQuery = searchInput.value;
   renderConvList();
 });
+
+// ── MOBILE NAV ────────────────────────────────────────────────────────
+const sidebar    = document.querySelector('.sidebar');
+const chatPanel  = document.querySelector('.chat-panel');
+const backBtn    = document.getElementById('backBtn');
+
+function isMobile() { return window.innerWidth <= 640; }
+
+function showChat() {
+  if (!isMobile()) return;
+  sidebar.classList.add('hidden');
+  chatPanel.classList.add('visible');
+}
+function showSidebar() {
+  if (!isMobile()) return;
+  sidebar.classList.remove('hidden');
+  chatPanel.classList.remove('visible');
+}
+
+backBtn.addEventListener('click', showSidebar);
+
+// patch openConv to slide on mobile
+const _openConv = openConv;
+window.openConvMobile = function(conv) {
+  _openConv(conv);
+  showChat();
+};
 </script>
 </body>
 </html>
