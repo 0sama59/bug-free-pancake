@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musta Chat</title>
+<link rel="icon" href="fav.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--sidebar:#161b26;--panel:#1a2032;
+  --border:#ffffff0f;--input-bg:#232b3e;
+  --blue:#3b82f6;--green:#22c55e;--red:#ef4444;--gold:#f59e0b;
+  --text:#e2e8f0;--muted:#64748b;--soft:#94a3b8;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+
+/* ── LOGIN ── */
+#login-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:radial-gradient(ellipse at 60% 30%,#1e2d4a,var(--bg) 70%)}
+.login-card{background:var(--sidebar);border:1px solid var(--border);border-radius:24px;padding:52px 44px;text-align:center;width:380px;box-shadow:0 32px 80px #00000066}
+.login-icon{font-size:3.5rem;margin-bottom:16px;display:block}
+.login-card h1{font-size:2rem;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
+.login-card p{color:var(--muted);font-size:.95rem;margin-bottom:36px}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:15px;background:#fff;color:#1f2937;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s,transform .1s}
+.google-btn:hover{opacity:.92}
+.google-btn:active{transform:scale(.98)}
+.login-err{margin-top:14px;color:var(--red);font-size:.83rem;min-height:18px}
+
+/* ── APP SHELL ── */
+#app{display:none;height:100vh;flex-direction:row}
+#app.show{display:flex}
+
+/* ── SIDEBAR ── */
+.sidebar{width:320px;min-width:320px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
+.my-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--blue)}
+.my-name{flex:1;font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.signout-btn{padding:6px 12px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:.75rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.signout-btn:hover{border-color:var(--red);color:var(--red)}
+
+.search-wrap{padding:12px 16px;border-bottom:1px solid var(--border)}
+.search-wrap input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px 10px 36px;color:var(--text);font-size:.875rem;font-family:inherit;outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}
+.search-wrap input:focus{border-color:var(--blue)}
+.search-wrap input::placeholder{color:var(--muted)}
+
+.conv-list{flex:1;overflow-y:auto;padding:8px 0}
+.conv-list::-webkit-scrollbar{width:3px}
+.conv-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .15s;border-radius:0;position:relative}
+.conv-item:hover{background:#ffffff08}
+.conv-item.active{background:#3b82f614}
+.conv-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--input-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted)}
+.conv-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-weight:600;font-size:.9rem;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.conv-sub{font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.offline-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;opacity:.5}
+.unread-badge{background:var(--blue);color:#fff;border-radius:10px;font-size:.7rem;font-weight:700;padding:2px 7px;flex-shrink:0}
+
+/* ── CHAT PANEL ── */
+.chat-panel{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
+.chat-panel-header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--sidebar);border-bottom:1px solid var(--border);flex-shrink:0}
+.chat-panel-avatar{width:38px;height:38px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;flex-shrink:0}
+.chat-panel-avatar img{width:100%;height:100%;object-fit:cover}
+.chat-panel-info{flex:1}
+.chat-panel-name{font-weight:700;font-size:.95rem}
+.chat-panel-status{font-size:.78rem;color:var(--muted)}
+
+#messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+#messages::-webkit-scrollbar{width:4px}
+#messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+.msg-bubble{max-width:68%;padding:10px 14px;border-radius:16px;word-wrap:break-word;animation:pop .15s ease;position:relative;line-height:1.5}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.msg-bubble.other{background:var(--panel);border-bottom-left-radius:4px;align-self:flex-start}
+.msg-bubble.mine{background:var(--blue);border-bottom-right-radius:4px;align-self:flex-end}
+.msg-bubble.admin-bubble{background:#3a1a1a;border:1px solid #ff4d4d44;align-self:flex-start;animation:pop .15s ease,glow 2s infinite alternate}
+@keyframes glow{from{box-shadow:0 0 6px rgba(255,77,77,.15)}to{box-shadow:0 0 14px rgba(255,77,77,.35)}}
+.bubble-nick{font-size:.75rem;font-weight:700;margin-bottom:4px;color:var(--blue)}
+.bubble-nick.admin-name{color:var(--red)}
+.bubble-nick.mine-name{display:none}
+.bubble-text{font-size:.9rem}
+.bubble-time{font-size:.68rem;color:rgba(255,255,255,.35);margin-top:4px;text-align:right}
+.msg-bubble.mine .bubble-time{color:rgba(255,255,255,.5)}
+
+.system-msg{text-align:center;color:var(--muted);font-size:.78rem;font-style:italic;padding:4px 0;opacity:.8}
+.highlight-msg{background:#2d2a14;border:1px solid #f59e0b44;color:var(--gold);font-weight:700;text-align:center;padding:12px 20px;border-radius:12px;font-size:.9rem}
+
+/* ── SUGGESTIONS ── */
+.suggestions{background:var(--input-bg);border-top:1px solid var(--border);padding:8px 16px;display:none;flex-wrap:wrap;gap:6px;max-height:88px;overflow-y:auto}
+.suggestions span{padding:4px 10px;background:var(--panel);border-radius:6px;cursor:pointer;color:var(--soft);font-size:.78rem;transition:background .15s,color .15s}
+.suggestions span:hover{background:var(--blue);color:#fff}
+
+/* ── INPUT ── */
+.input-area{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--sidebar);border-top:1px solid var(--border);flex-shrink:0}
+.input-area input{flex:1;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:.9rem;outline:none;transition:border-color .2s}
+.input-area input:focus{border-color:var(--blue)}
+.input-area input::placeholder{color:var(--muted)}
+.input-area input:disabled{opacity:.4}
+.send-btn{width:44px;height:44px;background:var(--blue);border:none;border-radius:12px;color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
+.send-btn:hover{background:#2563eb}
+.send-btn:active{transform:scale(.95)}
+.send-btn:disabled{background:var(--input-bg);cursor:not-allowed}
+
+/* ── EMPTY STATE ── */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px}
+.empty-state span{font-size:3rem}
+.empty-state p{font-size:.9rem}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  .sidebar{width:100%;min-width:unset;display:none}
+  .sidebar.mobile-show{display:flex;position:fixed;inset:0;z-index:100}
+  .chat-panel{width:100%}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <span class="login-icon">💬</span>
+    <h1>Musta Chat</h1>
+    <p>Sign in to start chatting</p>
+    <button id="googleSignInBtn" class="google-btn">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.6-8 19.6-20 0-1.3-.1-2.7-.4-4z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.5-5l-6.2-5.2C29.4 35.6 26.8 36 24 36c-5.2 0-9.6-3-11.4-7.4l-6.5 5C9.6 39.6 16.3 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.8 35.4 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/>
+      </svg>
+      Continue with Google
+    </button>
+    <p id="login-err" class="login-err"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <img id="myAvatar" class="my-avatar" src="" alt="" style="display:none"/>
+      <div id="myAvatarFallback" class="my-avatar" style="background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:1rem">💬</div>
+      <span id="myName" class="my-name"></span>
+      <button id="signOutBtn" class="signout-btn">Sign out</button>
+    </div>
+    <div class="search-wrap">
+      <input id="searchInput" placeholder="Search users..." autocomplete="off"/>
+    </div>
+    <div class="conv-list" id="convList"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-panel">
+    <div class="chat-panel-header" id="chatHeader">
+      <div class="chat-panel-avatar" id="headerAvatar">💬</div>
+      <div class="chat-panel-info">
+        <div class="chat-panel-name" id="headerName">Global Chat</div>
+        <div class="chat-panel-status" id="headerStatus">Everyone online</div>
+      </div>
+    </div>
+    <div id="messages"></div>
+    <div id="suggestions" class="suggestions"></div>
+    <div class="input-area">
+      <input id="msgInput" placeholder="Type a message..." autocomplete="off"/>
+      <button id="sendBtn" class="send-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:            "AIzaSyBNHdgWB2Shx7Z2wsgilMJSOZts2Vpgw-c",
+  authDomain:        "mustachat-62744.firebaseapp.com",
+  projectId:         "mustachat-62744",
+  storageBucket:     "mustachat-62744.firebasestorage.app",
+  messagingSenderId: "799792286947",
+  appId:             "1:799792286947:web:dae54f5f62a4c7d6ec09d6"
+});
+const auth = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
+
+const $ = id => document.getElementById(id);
+const loginScreen  = $('login-screen');
+const app          = $('app');
+const googleBtn    = $('googleSignInBtn');
+const signOutBtn   = $('signOutBtn');
+const loginErr     = $('login-err');
+const myAvatar     = $('myAvatar');
+const myAvatarFB   = $('myAvatarFallback');
+const myName       = $('myName');
+const messagesDiv  = $('messages');
+const msgInput     = $('msgInput');
+const sendBtn      = $('sendBtn');
+const suggestionsDiv = $('suggestions');
+const convList     = $('convList');
+const searchInput  = $('searchInput');
+const headerName   = $('headerName');
+const headerStatus = $('headerStatus');
+const headerAvatar = $('headerAvatar');
+
+const adminCommands = ["/kick [name]","/ban [name]","/rename [old] [new]","/highlight [msg]","/mute [name]","/unmute [name]","/unban [name]","/clear","/freeze","/unfreeze"];
+
+let myNick = null, myUID = null, myPhoto = null;
+let wss = null;
+let currentConv = 'global'; // 'global' or nick for DM
+let allUsers = [];
+let unread = {}; // nick -> count
+let searchQuery = '';
+
+// ── GOOGLE AUTH ───────────────────────────────────────────────────────
+let signingIn = false;
+googleBtn.addEventListener('click', () => {
+  if (signingIn) return;
+  signingIn = true;
+  loginErr.textContent = '';
+  googleBtn.disabled = true;
+  auth.signInWithPopup(provider)
+    .catch(e => {
+      if (e.code !== 'auth/cancelled-popup-request') loginErr.textContent = e.message;
+    })
+    .finally(() => { signingIn = false; googleBtn.disabled = false; });
+});
+signOutBtn.addEventListener('click', () => auth.signOut());
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    loginScreen.style.display = 'none';
+    app.classList.add('show');
+    myUID   = user.uid;
+    myNick  = user.displayName || user.email.split('@')[0];
+    myPhoto = user.photoURL || '';
+    if (myPhoto) { myAvatar.src = myPhoto; myAvatar.style.display = 'block'; myAvatarFB.style.display = 'none'; }
+    myName.textContent = myNick;
+    initWS();
+  } else {
+    loginScreen.style.display = 'flex';
+    app.classList.remove('show');
+    myNick = myUID = myPhoto = null;
+    if (wss) { wss.close(); wss = null; }
+  }
+});
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────
+let kicked = false;
+
+function initWS() {
+  kicked = false;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const socket = new WebSocket(`${proto}://${location.host}`);
+  wss = socket;
+
+  socket.onopen = () => {
+    socket.send(JSON.stringify({ type:'register', nick:myNick, uid:myUID, photoURL:myPhoto }));
+  };
+
+  socket.onmessage = ({ data: raw }) => {
+    let d;
+    try { d = JSON.parse(raw); } catch(e) { return; }
+
+    if (d.type === 'kicked_session') {
+      kicked = true;
+      wss = null;
+      socket.close();
+      app.classList.remove('show');
+      loginScreen.style.display = 'flex';
+      loginErr.textContent = 'You opened a new tab — this session was closed.';
+      return;
+    }
+
+    if (d.type === 'error') {
+      if (d.message?.includes('taken')) { myNick += '_' + Math.floor(Math.random()*99); socket.send(JSON.stringify({type:'register',nick:myNick,uid:myUID,photoURL:myPhoto})); }
+      return;
+    }
+
+    if (d.type === 'admin_ready') {
+      suggestionsDiv.style.display = 'flex';
+      suggestionsDiv.innerHTML = adminCommands.map(c => `<span>${c}</span>`).join('');
+      return;
+    }
+
+    if (d.type === 'all_users') {
+      allUsers = d.users;
+      renderConvList();
+      return;
+    }
+
+    if (d.type === 'history') {
+      messagesDiv.innerHTML = '';
+      d.messages.forEach(m => renderGlobalMsg(m, false));
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      return;
+    }
+
+    if (d.type === 'dm_history') {
+      if (currentConv !== d.with) return;
+      messagesDiv.innerHTML = '';
+      d.messages.forEach(m => renderDmMsg(m, false));
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      return;
+    }
+
+    if (d.type === 'chat' && d.nick === 'SYSTEM') {
+      if (currentConv === 'global') appendSystem(d.text);
+      return;
+    }
+
+    if (d.type === 'chat') {
+      if (currentConv === 'global') { renderGlobalMsg(d, true); }
+      return;
+    }
+
+    if (d.type === 'dm_receive') {
+      const peer = d.from === myNick ? d.to : d.from;
+      if (currentConv === peer) {
+        renderDmMsg(d, true);
+      } else {
+        unread[peer] = (unread[peer] || 0) + 1;
+        renderConvList();
+      }
+      return;
+    }
+
+    if (d.type === 'clear') { if (currentConv === 'global') messagesDiv.innerHTML = ''; return; }
+
+    if (d.type === 'ban' || d.type === 'kick') {
+      appendSystem(`You have been ${d.type === 'ban' ? 'banned' : 'kicked'} for ${d.minutes} minutes.`);
+      msgInput.disabled = sendBtn.disabled = true;
+      setTimeout(() => { msgInput.disabled = sendBtn.disabled = false; appendSystem('You can chat again.'); }, d.minutes*60000);
+      return;
+    }
+
+    if (d.type === 'highlight') {
+      if (currentConv === 'global') {
+        const el = document.createElement('div');
+        el.className = 'highlight-msg';
+        el.textContent = `📢 ${d.text}`;
+        messagesDiv.appendChild(el);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+    }
+  };
+
+  socket.onclose = () => { if (!kicked && auth.currentUser) setTimeout(initWS, 3000); };
+}
+
+// ── RENDER HELPERS ───────────────────────────────────────────────────
+function renderGlobalMsg(m, scroll) {
+  const isAdmin = m.nick.toLowerCase() === 'nimda';
+  const isMe = m.nick === myNick;
+  const div = document.createElement('div');
+  div.className = `msg-bubble ${isAdmin ? 'admin-bubble' : isMe ? 'mine' : 'other'}`;
+  const displayNick = isAdmin ? 'ADMIN' : m.nick;
+  div.innerHTML = `
+    <div class="bubble-nick ${isAdmin?'admin-name':isMe?'mine-name':''}">${displayNick}</div>
+    <div class="bubble-text">${esc(m.text)}</div>
+    <div class="bubble-time">${m.timestamp}</div>`;
+  messagesDiv.appendChild(div);
+  if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function renderDmMsg(m, scroll) {
+  const isMe = m.from === myNick;
+  const div = document.createElement('div');
+  div.className = `msg-bubble ${isMe ? 'mine' : 'other'}`;
+  div.innerHTML = `
+    <div class="bubble-nick ${isMe?'mine-name':''}">${isMe ? 'You' : m.from}</div>
+    <div class="bubble-text">${esc(m.text)}</div>
+    <div class="bubble-time">${m.timestamp}</div>`;
+  messagesDiv.appendChild(div);
+  if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function appendSystem(text) {
+  const div = document.createElement('div');
+  div.className = 'system-msg';
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CONV LIST ────────────────────────────────────────────────────────
+function renderConvList() {
+  const q = searchQuery.toLowerCase();
+  const filtered = allUsers.filter(u => u.nick !== myNick && (!q || u.nick.toLowerCase().includes(q)));
+  
+  let html = '';
+
+  // Global Chat item
+  if (!q) {
+    html += `<div class="conv-item ${currentConv==='global'?'active':''}" data-conv="global">
+      <div class="conv-avatar">🌐</div>
+      <div class="conv-info">
+        <div class="conv-name">Global Chat</div>
+        <div class="conv-sub">Everyone</div>
+      </div>
+    </div>`;
+  }
+
+  // User items
+  filtered.forEach(u => {
+    const isAdmin = u.nick.toLowerCase() === 'nimda';
+    const avatarHtml = u.photoURL
+      ? `<img src="${u.photoURL}" alt="" />`
+      : `<span style="font-size:.9rem">${u.nick.charAt(0).toUpperCase()}</span>`;
+    const badge = unread[u.nick] ? `<span class="unread-badge">${unread[u.nick]}</span>` : '';
+    const dot = u.online ? '<span class="online-dot"></span>' : '<span class="offline-dot"></span>';
+    const lastSeen = u.online ? 'Online' : formatLastSeen(u.lastSeen);
+    html += `<div class="conv-item ${currentConv===u.nick?'active':''}" data-conv="${esc(u.nick)}">
+      <div class="conv-avatar">${avatarHtml}</div>
+      <div class="conv-info">
+        <div class="conv-name">${isAdmin?'👑 ADMIN':esc(u.nick)} ${dot}</div>
+        <div class="conv-sub">${lastSeen}</div>
+      </div>
+      ${badge}
+    </div>`;
+  });
+
+  convList.innerHTML = html;
+
+  convList.querySelectorAll('.conv-item').forEach(el => {
+    el.addEventListener('click', () => openConv(el.dataset.conv));
+  });
+}
+
+function formatLastSeen(ts) {
+  if (!ts) return 'Offline';
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+  return `${Math.floor(diff/86400000)}d ago`;
+}
+
+function openConv(conv) {
+  currentConv = conv;
+  unread[conv] = 0;
+  messagesDiv.innerHTML = '';
+
+  if (conv === 'global') {
+    headerAvatar.innerHTML = '💬';
+    headerName.textContent = 'Global Chat';
+    headerStatus.textContent = `${allUsers.filter(u=>u.online).length} online`;
+    if (wss?.readyState === WebSocket.OPEN) wss.send(JSON.stringify({ type:'history_req' }));
+    // reload history from server
+    wss.send(JSON.stringify({ type:'register', nick:myNick, uid:myUID, photoURL:myPhoto }));
+  } else {
+    const u = allUsers.find(u => u.nick === conv);
+    if (u?.photoURL) headerAvatar.innerHTML = `<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>`;
+    else headerAvatar.innerHTML = conv.charAt(0).toUpperCase();
+    headerName.textContent = conv.toLowerCase() === 'nimda' ? '👑 ADMIN' : conv;
+    headerStatus.textContent = u?.online ? '🟢 Online' : `Last seen ${formatLastSeen(u?.lastSeen)}`;
+    wss.send(JSON.stringify({ type:'dm_open', with: conv }));
+  }
+
+  renderConvList();
+  msgInput.focus();
+}
+
+// ── SEND ─────────────────────────────────────────────────────────────
+function sendMessage() {
+  if (!myNick || !wss || wss.readyState !== WebSocket.OPEN) return;
+  const text = msgInput.value.trim();
+  if (!text) return;
+
+  if (currentConv === 'global') {
+    wss.send(JSON.stringify({ type:'chat', nick:myNick, text }));
+  } else {
+    wss.send(JSON.stringify({ type:'dm', to:currentConv, text }));
+  }
+  msgInput.value = '';
+  msgInput.focus();
+}
+
+sendBtn.addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+suggestionsDiv.addEventListener('click', e => {
+  if (e.target.tagName === 'SPAN') {
+    msgInput.value = e.target.textContent.replace(/\[\w+\]/g,'').trim();
+    msgInput.focus();
+  }
+});
+searchInput.addEventListener('input', () => {
+  searchQuery = searchInput.value;
+  renderConvList();
+});
+</script>
+</body>
+</html>
