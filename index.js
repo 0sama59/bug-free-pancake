@@ -1,11 +1,27 @@
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const { MongoClient } = require('mongodb');
+const https = require('https');
+const http  = require('http');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
-const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// ── KEEP-ALIVE: prevents Render free tier from sleeping ────────────────
+app.get('/ping', (_req, res) => res.send('pong'));
+
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  const RENDER_URL = process.env.RENDER_EXTERNAL_URL; // auto-set by Render
+  if (RENDER_URL) {
+    setInterval(() => {
+      // use built-in http/https — no fetch needed
+      const mod = RENDER_URL.startsWith('https') ? https : http;
+      mod.get(`${RENDER_URL}/ping`, res => res.resume()).on('error', () => {});
+    }, 10 * 60 * 1000); // ping every 10 minutes
+  }
+});
 
 // 5 MB max — needed for voice message audio base64
 const wsss = new WebSocketServer({ server, maxPayload: 5 * 1024 * 1024 });
@@ -27,6 +43,9 @@ async function connectDB() {
   usersCol    = db.collection('users');
   bansCol     = db.collection('bans');
   console.log('MongoDB connected');
+  // Clean up any corrupt user records with no nick
+  const cleaned = await usersCol.deleteMany({ $or: [{ nick: null }, { nick: '' }, { nick: { $exists: false } }] });
+  if (cleaned.deletedCount > 0) console.log(`Cleaned ${cleaned.deletedCount} corrupt user record(s)`);
 }
 
 function makeNick(displayName) {
