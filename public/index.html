@@ -16,104 +16,155 @@
 }
 body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
 
-/* ── LOGIN ── */
+/* ══════════ LOGIN ══════════ */
 #login-screen{display:flex;align-items:center;justify-content:center;height:100vh;background:radial-gradient(ellipse at 60% 30%,#1e2d4a,var(--bg) 70%)}
 .login-card{background:var(--sidebar);border:1px solid var(--border);border-radius:24px;padding:52px 44px;text-align:center;width:380px;box-shadow:0 32px 80px #00000066}
 .login-icon{font-size:3.5rem;margin-bottom:16px;display:block}
-.login-card h1{font-size:2rem;font-weight:700;letter-spacing:-.5px;margin-bottom:8px}
+.login-card h1{font-size:2rem;font-weight:700;margin-bottom:8px}
 .login-card p{color:var(--muted);font-size:.95rem;margin-bottom:36px}
 .google-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:15px;background:#fff;color:#1f2937;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity .2s,transform .1s}
-.google-btn:hover{opacity:.92}
-.google-btn:active{transform:scale(.98)}
+.google-btn:hover{opacity:.92}.google-btn:active{transform:scale(.98)}
 .login-err{margin-top:14px;color:var(--red);font-size:.83rem;min-height:18px}
 
-/* ── APP SHELL ── */
+/* ══════════ INCOMING CALL MODAL ══════════ */
+#incomingCall{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;padding-bottom:40px}
+.inc-bg{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+.inc-card{position:relative;background:var(--sidebar);border:1px solid var(--border);border-radius:28px;padding:36px 40px;text-align:center;width:300px;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes slideUp{from{opacity:0;transform:translateY(60px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.inc-ring{width:88px;height:88px;border-radius:50%;margin:0 auto 18px;position:relative;animation:incRing 1.4s infinite}
+@keyframes incRing{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}60%{box-shadow:0 0 0 20px rgba(34,197,94,0)}}
+.inc-avt{width:88px;height:88px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:2.2rem;overflow:hidden}
+.inc-avt img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.inc-name{font-size:1.15rem;font-weight:700;margin-bottom:4px}
+.inc-label{font-size:.82rem;color:var(--muted);margin-bottom:28px}
+.inc-btns{display:flex;justify-content:center;gap:44px}
+.inc-btn{width:62px;height:62px;border-radius:50%;border:none;font-size:1.6rem;cursor:pointer;transition:transform .1s,opacity .2s;display:flex;align-items:center;justify-content:center}
+.inc-btn:hover{opacity:.85}.inc-btn:active{transform:scale(.94)}
+.inc-btn.accept{background:var(--green)}.inc-btn.reject{background:var(--red)}
+
+/* ══════════ ACTIVE CALL SCREEN ══════════ */
+#activeCall{position:fixed;inset:0;z-index:999;background:#000;display:flex;flex-direction:column}
+#remoteVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#voiceCallBg{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a2032 0%,#0b0e15 100%);display:flex;align-items:center;justify-content:center}
+.voice-call-avatar{width:130px;height:130px;border-radius:50%;background:var(--input-bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:3.2rem;overflow:hidden;animation:vPulse 2s infinite}
+@keyframes vPulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.3)}50%{box-shadow:0 0 0 24px rgba(59,130,246,0)}}
+.voice-call-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#localVideo{position:absolute;bottom:130px;right:18px;width:110px;height:155px;border-radius:14px;object-fit:cover;border:2px solid rgba(255,255,255,.25);z-index:2;background:#111;cursor:pointer}
+.call-top{position:absolute;top:0;left:0;right:0;padding:50px 20px 20px;text-align:center;z-index:3;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent)}
+.call-peer-name{font-size:1.5rem;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.5);margin-bottom:6px}
+.call-timer{font-size:.95rem;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;letter-spacing:.05em}
+.call-ctrl-bar{position:absolute;bottom:0;left:0;right:0;padding:24px 20px 44px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);display:flex;justify-content:center;align-items:center;gap:18px;z-index:3}
+.ctrl-btn{width:64px;height:64px;border-radius:50%;border:none;font-size:1.35rem;cursor:pointer;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);color:#fff;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center}
+.ctrl-btn:hover{background:rgba(255,255,255,.28)}
+.ctrl-btn:active{transform:scale(.93)}
+.ctrl-btn.toggled{background:rgba(239,68,68,.55)}
+.ctrl-btn.end-call{background:var(--red);width:70px;height:70px;font-size:1.5rem}
+.ctrl-btn.end-call:hover{background:#dc2626}
+
+/* ══════════ APP SHELL ══════════ */
 #app{display:none;height:100vh;flex-direction:row}
 #app.show{display:flex}
 
-/* ── SIDEBAR ── */
-.sidebar{width:320px;min-width:320px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh}
-.sidebar-header{display:flex;align-items:center;gap:10px;padding:18px 16px;border-bottom:1px solid var(--border)}
-.my-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--blue)}
-.my-name{flex:1;font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.signout-btn{padding:6px 12px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:.75rem;cursor:pointer;font-family:inherit;transition:all .2s}
+/* ══════════ SIDEBAR ══════════ */
+.sidebar{width:300px;min-width:300px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:14px 14px;border-bottom:1px solid var(--border)}
+.my-avt{width:36px;height:36px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:.9rem;border:2px solid var(--blue);overflow:hidden;flex-shrink:0}
+.my-avt img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.my-nick-wrap{flex:1;min-width:0}
+.my-nick-name{font-weight:700;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.my-nick-label{font-size:.7rem;color:var(--muted);margin-top:1px}
+.signout-btn{padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .2s;flex-shrink:0}
 .signout-btn:hover{border-color:var(--red);color:var(--red)}
-
-.search-wrap{padding:12px 16px;border-bottom:1px solid var(--border)}
-.search-wrap input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px 10px 36px;color:var(--text);font-size:.875rem;font-family:inherit;outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}
+.search-wrap{padding:10px 12px;border-bottom:1px solid var(--border)}
+.search-wrap input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:9px 13px 9px 33px;color:var(--text);font-size:.84rem;font-family:inherit;outline:none;transition:border-color .2s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:11px center}
 .search-wrap input:focus{border-color:var(--blue)}
 .search-wrap input::placeholder{color:var(--muted)}
-
-.conv-list{flex:1;overflow-y:auto;padding:8px 0}
+.section-lbl{padding:10px 14px 4px;font-size:.69rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.conv-list{flex:1;overflow-y:auto;padding:4px 0 8px}
 .conv-list::-webkit-scrollbar{width:3px}
 .conv-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
-
-.conv-item{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .15s;border-radius:0;position:relative}
+.conv-item{display:flex;align-items:center;gap:11px;padding:10px 12px;cursor:pointer;transition:background .15s;position:relative}
 .conv-item:hover{background:#ffffff08}
-.conv-item.active{background:#3b82f614}
-.conv-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--input-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted)}
-.conv-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.conv-info{flex:1;min-width:0}
-.conv-name{font-weight:600;font-size:.9rem;margin-bottom:2px;display:flex;align-items:center;gap:6px}
-.conv-sub{font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
-.offline-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;opacity:.5}
-.unread-badge{background:var(--blue);color:#fff;border-radius:10px;font-size:.7rem;font-weight:700;padding:2px 7px;flex-shrink:0}
+.conv-item.active{background:#3b82f614;border-right:2px solid var(--blue)}
+.c-avt{width:42px;height:42px;border-radius:50%;background:var(--input-bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:700;color:var(--soft);overflow:hidden;position:relative}
+.c-avt img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.s-ring{position:absolute;bottom:1px;right:1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--sidebar)}
+.s-ring.on{background:var(--green)}.s-ring.off{background:var(--muted);opacity:.45}
+.c-info{flex:1;min-width:0}
+.c-name{font-weight:600;font-size:.87rem;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-sub{font-size:.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.unread-badge{background:var(--blue);color:#fff;border-radius:10px;font-size:.68rem;font-weight:700;padding:2px 6px;min-width:18px;text-align:center;flex-shrink:0}
 
-/* ── CHAT PANEL ── */
+/* ══════════ CHAT PANEL ══════════ */
 .chat-panel{flex:1;display:flex;flex-direction:column;height:100vh;min-width:0}
-.chat-panel-header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--sidebar);border-bottom:1px solid var(--border);flex-shrink:0}
-.chat-panel-avatar{width:38px;height:38px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;flex-shrink:0}
-.chat-panel-avatar img{width:100%;height:100%;object-fit:cover}
-.chat-panel-info{flex:1}
-.chat-panel-name{font-weight:700;font-size:.95rem}
-.chat-panel-status{font-size:.78rem;color:var(--muted)}
+.chat-hdr{display:flex;align-items:center;gap:11px;padding:12px 16px;background:var(--sidebar);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-avt{width:38px;height:38px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:.95rem;overflow:hidden;flex-shrink:0}
+.hdr-avt img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.hdr-info{flex:1;min-width:0}
+.hdr-name{font-weight:700;font-size:.93rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-status{font-size:.76rem;color:var(--muted)}
 
-#messages{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+/* Call buttons in header */
+.hdr-call-btns{display:flex;gap:7px;flex-shrink:0}
+.hdr-cbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--soft);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.95rem;transition:all .2s}
+.hdr-cbtn:hover{background:var(--input-bg);color:var(--text);border-color:var(--blue)}
+
+/* Admin buttons */
+.adm-actions{display:flex;gap:5px;flex-shrink:0}
+.adm-btn{padding:5px 9px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-size:.7rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.adm-btn:hover{background:var(--red);border-color:var(--red);color:#fff}
+.adm-btn.warn{color:var(--gold);border-color:var(--gold)}.adm-btn.warn:hover{background:var(--gold);color:#000}
+.adm-btn.ok{color:var(--green);border-color:var(--green)}.adm-btn.ok:hover{background:var(--green);color:#000}
+
+#messages{flex:1;padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth}
 #messages::-webkit-scrollbar{width:4px}
 #messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
-.msg-bubble{max-width:68%;padding:10px 14px;border-radius:16px;word-wrap:break-word;animation:pop .15s ease;position:relative;line-height:1.5}
+/* Bubbles */
+.msg-bubble{max-width:70%;padding:10px 13px;border-radius:16px;word-wrap:break-word;animation:pop .15s ease;position:relative;line-height:1.5}
 @keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 .msg-bubble.other{background:var(--panel);border-bottom-left-radius:4px;align-self:flex-start}
 .msg-bubble.mine{background:var(--blue);border-bottom-right-radius:4px;align-self:flex-end}
-.msg-bubble.admin-bubble{background:#3a1a1a;border:1px solid #ff4d4d44;align-self:flex-start;animation:pop .15s ease,glow 2s infinite alternate}
-@keyframes glow{from{box-shadow:0 0 6px rgba(255,77,77,.15)}to{box-shadow:0 0 14px rgba(255,77,77,.35)}}
-.bubble-nick{font-size:.75rem;font-weight:700;margin-bottom:4px;color:var(--blue)}
-.bubble-nick.admin-name{color:var(--red)}
-.bubble-nick.mine-name{display:none}
-.bubble-text{font-size:.9rem}
-.bubble-time{font-size:.68rem;color:rgba(255,255,255,.35);margin-top:4px;text-align:right}
-.msg-bubble.mine .bubble-time{color:rgba(255,255,255,.5)}
+.b-nick{font-size:.72rem;font-weight:700;margin-bottom:4px;color:var(--blue)}
+.b-nick.me{display:none}
+.b-text{font-size:.87rem}
+.b-time{font-size:.67rem;color:rgba(255,255,255,.35);margin-top:4px;text-align:right}
+.msg-bubble.mine .b-time{color:rgba(255,255,255,.5)}
 
-.system-msg{text-align:center;color:var(--muted);font-size:.78rem;font-style:italic;padding:4px 0;opacity:.8}
-.highlight-msg{background:#2d2a14;border:1px solid #f59e0b44;color:var(--gold);font-weight:700;text-align:center;padding:12px 20px;border-radius:12px;font-size:.9rem}
+/* Voice message bubble */
+.voice-msg-wrap{display:flex;align-items:center;gap:8px;padding:4px 0}
+.voice-msg-wrap audio{width:180px;height:30px;accent-color:var(--blue)}
+.voice-dur{font-size:.72rem;color:rgba(255,255,255,.5);white-space:nowrap}
 
-/* ── SUGGESTIONS ── */
-.suggestions{background:var(--input-bg);border-top:1px solid var(--border);padding:8px 16px;display:none;flex-wrap:wrap;gap:6px;max-height:88px;overflow-y:auto}
-.suggestions span{padding:4px 10px;background:var(--panel);border-radius:6px;cursor:pointer;color:var(--soft);font-size:.78rem;transition:background .15s,color .15s}
-.suggestions span:hover{background:var(--blue);color:#fff}
+.system-note{text-align:center;color:var(--muted);font-size:.76rem;font-style:italic;padding:4px 0;opacity:.8}
 
-/* ── INPUT ── */
-.input-area{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--sidebar);border-top:1px solid var(--border);flex-shrink:0}
-.input-area input{flex:1;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:12px 16px;font-family:inherit;font-size:.9rem;outline:none;transition:border-color .2s}
+/* Empty state */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);text-align:center;padding:24px}
+.empty-state .e-icon{font-size:3rem;opacity:.5}
+.empty-state p{font-size:.88rem;max-width:200px;line-height:1.6}
+
+/* Input area */
+.input-area{display:flex;align-items:center;gap:8px;padding:11px 16px;background:var(--sidebar);border-top:1px solid var(--border);flex-shrink:0}
+.input-area input{flex:1;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-family:inherit;font-size:.88rem;outline:none;transition:border-color .2s}
 .input-area input:focus{border-color:var(--blue)}
 .input-area input::placeholder{color:var(--muted)}
-.input-area input:disabled{opacity:.4}
-.send-btn{width:44px;height:44px;background:var(--blue);border:none;border-radius:12px;color:#fff;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
-.send-btn:hover{background:#2563eb}
-.send-btn:active{transform:scale(.95)}
+.input-area input:disabled{opacity:.35}
+.send-btn{width:42px;height:42px;background:var(--blue);border:none;border-radius:12px;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,transform .1s}
+.send-btn:hover{background:#2563eb}.send-btn:active{transform:scale(.95)}
 .send-btn:disabled{background:var(--input-bg);cursor:not-allowed}
 
-/* ── EMPTY STATE ── */
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px}
-.empty-state span{font-size:3rem}
-.empty-state p{font-size:.9rem}
+/* Mic button */
+.mic-btn{width:42px;height:42px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;transition:all .2s;flex-shrink:0;user-select:none;-webkit-user-select:none;touch-action:none}
+.mic-btn:hover{background:var(--input-bg);color:var(--text)}
+.mic-btn.recording{background:var(--red);border-color:var(--red);color:#fff;animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.rec-indicator{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap;pointer-events:none;animation:recBlink 1s infinite}
+@keyframes recBlink{0%,100%{opacity:1}50%{opacity:.6}}
 
-/* ── BACK BTN ── */
-.back-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:4px 8px 4px 0;display:none;align-items:center;flex-shrink:0}
+/* Back btn (mobile) */
+.back-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:4px 8px 4px 0;align-items:center;flex-shrink:0;display:none}
 
-/* ── MOBILE ── */
+/* ══════════ MOBILE ══════════ */
 @media(max-width:640px){
   .login-card{width:92%;padding:36px 24px}
   #app.show{position:relative;overflow:hidden}
@@ -121,13 +172,14 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   .sidebar.hidden{transform:translateX(-100%);pointer-events:none}
   .chat-panel{position:absolute;inset:0;width:100%;transform:translateX(100%);transition:transform .25s ease}
   .chat-panel.visible{transform:translateX(0)}
-  .back-btn{display:flex !important}
+  .back-btn{display:flex!important}
+  .adm-actions{display:none}
 }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ══ LOGIN ══ -->
 <div id="login-screen">
   <div class="login-card">
     <span class="login-icon">💬</span>
@@ -146,40 +198,90 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 </div>
 
-<!-- APP -->
+<!-- ══ INCOMING CALL ══ -->
+<div id="incomingCall" style="display:none">
+  <div class="inc-bg"></div>
+  <div class="inc-card">
+    <div class="inc-ring">
+      <div class="inc-avt" id="incAvt">👤</div>
+    </div>
+    <div class="inc-name" id="incName">Caller</div>
+    <div class="inc-label" id="incLabel">Incoming voice call...</div>
+    <div class="inc-btns">
+      <button class="inc-btn reject" id="rejectCallBtn">📵</button>
+      <button class="inc-btn accept" id="acceptCallBtn">📞</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACTIVE CALL ══ -->
+<div id="activeCall" style="display:none">
+  <video id="remoteVideo" autoplay playsinline></video>
+  <div id="voiceCallBg" style="display:none">
+    <div class="voice-call-avatar" id="callAvatar">👤</div>
+  </div>
+  <video id="localVideo" autoplay playsinline muted></video>
+  <div class="call-top">
+    <div class="call-peer-name" id="callPeerName">...</div>
+    <div class="call-timer" id="callTimerEl">Calling...</div>
+  </div>
+  <div class="call-ctrl-bar">
+    <button class="ctrl-btn" id="muteBtn"   title="Mute">🎤</button>
+    <button class="ctrl-btn" id="cameraBtn" title="Camera" style="display:none">📷</button>
+    <button class="ctrl-btn end-call" id="endCallBtn" title="End call">📵</button>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
 <div id="app">
+
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <img id="myAvatar" class="my-avatar" src="" alt="" style="display:none"/>
-      <div id="myAvatarFallback" class="my-avatar" style="background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:1rem">💬</div>
-      <span id="myName" class="my-name"></span>
+      <div class="my-avt" id="myAvt">👤</div>
+      <div class="my-nick-wrap">
+        <div class="my-nick-name" id="myNickEl">...</div>
+        <div class="my-nick-label">Your username</div>
+      </div>
       <button id="signOutBtn" class="signout-btn">Sign out</button>
     </div>
     <div class="search-wrap">
       <input id="searchInput" placeholder="Search users..." autocomplete="off"/>
     </div>
+    <div class="section-lbl">All Users</div>
     <div class="conv-list" id="convList"></div>
   </div>
 
-  <!-- CHAT -->
-  <div class="chat-panel">
-    <div class="chat-panel-header" id="chatHeader">
-      <button id="backBtn" class="back-btn" style="display:none">
+  <!-- CHAT PANEL -->
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-hdr" id="chatHdr">
+      <button id="backBtn" class="back-btn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <div class="chat-panel-avatar" id="headerAvatar">💬</div>
-      <div class="chat-panel-info">
-        <div class="chat-panel-name" id="headerName">Global Chat</div>
-        <div class="chat-panel-status" id="headerStatus">Everyone online</div>
+      <div class="hdr-avt" id="hdrAvt">💬</div>
+      <div class="hdr-info">
+        <div class="hdr-name" id="hdrName">Select a conversation</div>
+        <div class="hdr-status" id="hdrStatus"></div>
+      </div>
+      <div class="hdr-call-btns" id="hdrCallBtns" style="display:none">
+        <button class="hdr-cbtn" id="voiceCallBtn" title="Voice call">📞</button>
+        <button class="hdr-cbtn" id="videoCallBtn" title="Video call">📹</button>
+      </div>
+      <div class="adm-actions" id="admActions" style="display:none"></div>
+    </div>
+
+    <div id="messages">
+      <div class="empty-state" id="emptyState">
+        <span class="e-icon">💬</span>
+        <p>Pick someone from the sidebar to start a private conversation</p>
       </div>
     </div>
-    <div id="messages"></div>
-    <div id="suggestions" class="suggestions"></div>
-    <div class="input-area">
-      <input id="msgInput" placeholder="Type a message..." autocomplete="off"/>
-      <button id="sendBtn" class="send-btn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+
+    <div class="input-area" style="position:relative">
+      <input id="msgInput" placeholder="Type a message..." autocomplete="off" disabled/>
+      <button class="mic-btn" id="micBtn" title="Hold to record voice message">🎤</button>
+      <button class="send-btn" id="sendBtn" disabled>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
   </div>
@@ -196,347 +298,570 @@ firebase.initializeApp({
   messagingSenderId: "799792286947",
   appId:             "1:799792286947:web:dae54f5f62a4c7d6ec09d6"
 });
-const auth = firebase.auth();
+const auth     = firebase.auth();
 const provider = new firebase.auth.GoogleAuthProvider();
 
+// ── DOM ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const loginScreen  = $('login-screen');
-const app          = $('app');
-const googleBtn    = $('googleSignInBtn');
-const signOutBtn   = $('signOutBtn');
-const loginErr     = $('login-err');
-const myAvatar     = $('myAvatar');
-const myAvatarFB   = $('myAvatarFallback');
-const myName       = $('myName');
-const messagesDiv  = $('messages');
-const msgInput     = $('msgInput');
-const sendBtn      = $('sendBtn');
-const suggestionsDiv = $('suggestions');
-const convList     = $('convList');
-const searchInput  = $('searchInput');
-const headerName   = $('headerName');
-const headerStatus = $('headerStatus');
-const headerAvatar = $('headerAvatar');
+const loginScreen = $('login-screen'), app = $('app');
+const googleBtn   = $('googleSignInBtn'), signOutBtn = $('signOutBtn'), loginErr = $('login-err');
+const myAvtEl     = $('myAvt'), myNickEl = $('myNickEl');
+const messagesDiv = $('messages'), msgInput = $('msgInput'), sendBtn = $('sendBtn');
+const convList    = $('convList'), searchInput = $('searchInput');
+const hdrAvt      = $('hdrAvt'), hdrName = $('hdrName'), hdrStatus = $('hdrStatus');
+const hdrCallBtns = $('hdrCallBtns'), admActions = $('admActions');
+const emptyState  = $('emptyState');
+const micBtn      = $('micBtn');
 
-const adminCommands = ["/kick [name]","/ban [name]","/rename [old] [new]","/highlight [msg]","/mute [name]","/unmute [name]","/unban [name]","/clear","/freeze","/unfreeze"];
+// Call UI
+const incomingCall  = $('incomingCall');
+const activeCallEl  = $('activeCall');
+const remoteVideo   = $('remoteVideo');
+const localVideo    = $('localVideo');
+const voiceCallBg   = $('voiceCallBg');
+const callAvatar    = $('callAvatar');
+const incAvt        = $('incAvt');
+const incName       = $('incName');
+const incLabel      = $('incLabel');
+const callPeerName  = $('callPeerName');
+const callTimerEl   = $('callTimerEl');
+const muteBtn       = $('muteBtn');
+const cameraBtn     = $('cameraBtn');
+const endCallBtn    = $('endCallBtn');
+const acceptCallBtn = $('acceptCallBtn');
+const rejectCallBtn = $('rejectCallBtn');
+const voiceCallBtn  = $('voiceCallBtn');
+const videoCallBtn  = $('videoCallBtn');
 
-let myNick = null, myUID = null, myPhoto = null;
-let wss = null;
-let currentConv = 'global'; // 'global' or nick for DM
-let allUsers = [];
-let unread = {}; // nick -> count
+// ── STATE ─────────────────────────────────────────────────────────────
+let myNick = null, myUID = null, myPhoto = null, myDisplayName = null;
+let isAdmin = false, wss = null;
+let currentConv = null;
+let allUsers    = [];
+let unread      = {};
 let searchQuery = '';
 
-// ── GOOGLE AUTH ───────────────────────────────────────────────────────
+// ── Call state ────────────────────────────────────────────────────────
+const ICE_CFG = { iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}] };
+let peerConn         = null;
+let localStream      = null;
+let callPeer         = null;
+let callIsVideo      = false;
+let inCall           = false;
+let isMuted          = false;
+let isCamOff         = false;
+let callTimerSec     = 0;
+let callTimerInt     = null;
+let pendingIce       = [];
+let pendingOffer     = null;   // stored while incoming call ringing
+let ringtoneCtx      = null;
+let ringtoneTimer    = null;
+let callRingTimeout  = null;
+
+// ── Voice recording state ─────────────────────────────────────────────
+let mediaRecorder    = null;
+let audioChunks      = [];
+let recStartTime     = 0;
+
+// ── AUTH ──────────────────────────────────────────────────────────────
 let signingIn = false;
 googleBtn.addEventListener('click', () => {
   if (signingIn) return;
-  signingIn = true;
-  loginErr.textContent = '';
-  googleBtn.disabled = true;
+  signingIn = true; loginErr.textContent = ''; googleBtn.disabled = true;
   auth.signInWithPopup(provider)
-    .catch(e => {
-      if (e.code !== 'auth/cancelled-popup-request') loginErr.textContent = e.message;
-    })
+    .catch(e => { if (e.code !== 'auth/cancelled-popup-request') loginErr.textContent = e.message; })
     .finally(() => { signingIn = false; googleBtn.disabled = false; });
 });
 signOutBtn.addEventListener('click', () => auth.signOut());
 
 auth.onAuthStateChanged(user => {
   if (user) {
-    loginScreen.style.display = 'none';
-    app.classList.add('show');
-    myUID   = user.uid;
-    myNick  = user.displayName || user.email.split('@')[0];
+    myUID = user.uid; myDisplayName = user.displayName || user.email.split('@')[0];
     myPhoto = user.photoURL || '';
-    if (myPhoto) { myAvatar.src = myPhoto; myAvatar.style.display = 'block'; myAvatarFB.style.display = 'none'; }
-    myName.textContent = myNick;
+    if (myPhoto) {
+      myAvtEl.innerHTML = `<img src="${myPhoto}" alt=""/>`;
+    }
+    loginScreen.style.display = 'none'; app.classList.add('show');
     initWS();
   } else {
-    loginScreen.style.display = 'flex';
-    app.classList.remove('show');
-    myNick = myUID = myPhoto = null;
+    loginScreen.style.display = 'flex'; app.classList.remove('show');
+    myNick = myUID = myPhoto = myDisplayName = null; isAdmin = false;
     if (wss) { wss.close(); wss = null; }
   }
 });
 
 // ── WEBSOCKET ─────────────────────────────────────────────────────────
 let kicked = false;
-
 function initWS() {
   kicked = false;
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const proto  = location.protocol === 'https:' ? 'wss' : 'ws';
   const socket = new WebSocket(`${proto}://${location.host}`);
   wss = socket;
 
   socket.onopen = () => {
-    socket.send(JSON.stringify({ type:'register', nick:myNick, uid:myUID, photoURL:myPhoto }));
+    socket.send(JSON.stringify({ type:'register', uid:myUID, displayName:myDisplayName, photoURL:myPhoto }));
   };
 
   socket.onmessage = ({ data: raw }) => {
-    let d;
-    try { d = JSON.parse(raw); } catch(e) { return; }
+    let d; try { d = JSON.parse(raw); } catch { return; }
 
+    if (d.type === 'registered') {
+      myNick = d.nick; myNickEl.textContent = myNick;
+      renderConvList(); return;
+    }
     if (d.type === 'kicked_session') {
-      kicked = true;
-      wss = null;
-      socket.close();
-      app.classList.remove('show');
-      loginScreen.style.display = 'flex';
-      loginErr.textContent = 'You opened a new tab — this session was closed.';
-      return;
+      kicked = true; wss = null; socket.close();
+      app.classList.remove('show'); loginScreen.style.display = 'flex';
+      loginErr.textContent = 'Signed in elsewhere — session closed.'; return;
     }
-
-    if (d.type === 'error') {
-      if (d.message?.includes('taken')) { myNick += '_' + Math.floor(Math.random()*99); socket.send(JSON.stringify({type:'register',nick:myNick,uid:myUID,photoURL:myPhoto})); }
-      return;
-    }
-
-    if (d.type === 'admin_ready') {
-      suggestionsDiv.style.display = 'flex';
-      suggestionsDiv.innerHTML = adminCommands.map(c => `<span>${c}</span>`).join('');
-      return;
-    }
+    if (d.type === 'error')      { loginErr.textContent = d.message || 'Error.'; return; }
+    if (d.type === 'admin_ready'){ isAdmin = true; if (currentConv) renderAdminBtns(currentConv); return; }
 
     if (d.type === 'all_users') {
-      allUsers = d.users;
-      renderConvList();
+      allUsers = d.users; renderConvList();
+      if (currentConv) {
+        const u = allUsers.find(u => u.nick === currentConv);
+        if (u) hdrStatus.textContent = u.online ? '🟢 Online' : `Last seen ${fmtLastSeen(u.lastSeen)}`;
+      }
       return;
     }
-
-    if (d.type === 'history') {
-      messagesDiv.innerHTML = '';
-      d.messages.forEach(m => renderGlobalMsg(m, false));
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      return;
-    }
-
     if (d.type === 'dm_history') {
       if (currentConv !== d.with) return;
       messagesDiv.innerHTML = '';
       d.messages.forEach(m => renderDmMsg(m, false));
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      return;
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; return;
     }
-
-    if (d.type === 'chat' && d.nick === 'SYSTEM') {
-      if (currentConv === 'global') appendSystem(d.text);
-      return;
-    }
-
-    if (d.type === 'chat') {
-      if (currentConv === 'global') { renderGlobalMsg(d, true); }
-      return;
-    }
-
     if (d.type === 'dm_receive') {
       const peer = d.from === myNick ? d.to : d.from;
-      if (currentConv === peer) {
-        renderDmMsg(d, true);
-      } else {
-        unread[peer] = (unread[peer] || 0) + 1;
-        renderConvList();
-      }
+      if (currentConv === peer) renderDmMsg(d, true);
+      else { unread[peer] = (unread[peer]||0)+1; renderConvList(); }
       return;
     }
+    if (d.type === 'system_note') { appendSystem(d.text); return; }
+    if (d.type === 'admin_ack')   { appendSystem(`✅ ${d.cmd} → ${d.target}`); return; }
 
-    if (d.type === 'clear') { if (currentConv === 'global') messagesDiv.innerHTML = ''; return; }
-
-    if (d.type === 'ban' || d.type === 'kick') {
-      appendSystem(`You have been ${d.type === 'ban' ? 'banned' : 'kicked'} for ${d.minutes} minutes.`);
-      msgInput.disabled = sendBtn.disabled = true;
-      setTimeout(() => { msgInput.disabled = sendBtn.disabled = false; appendSystem('You can chat again.'); }, d.minutes*60000);
-      return;
-    }
-
-    if (d.type === 'highlight') {
-      if (currentConv === 'global') {
-        const el = document.createElement('div');
-        el.className = 'highlight-msg';
-        el.textContent = `📢 ${d.text}`;
-        messagesDiv.appendChild(el);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
-    }
+    // ── WEBRTC EVENTS ──────────────────────────────────────────────────
+    if (d.type === 'call_offer')     { handleIncomingCall(d); return; }
+    if (d.type === 'call_answer')    { handleCallAnswer(d); return; }
+    if (d.type === 'call_reject')    { handleCallRejected(d); return; }
+    if (d.type === 'call_end')       { handleCallEnded(); return; }
+    if (d.type === 'ice_candidate')  { handleIceCandidate(d); return; }
   };
 
   socket.onclose = () => { if (!kicked && auth.currentUser) setTimeout(initWS, 3000); };
 }
 
-// ── RENDER HELPERS ───────────────────────────────────────────────────
-function renderGlobalMsg(m, scroll) {
-  const isAdmin = m.nick.toLowerCase() === 'nimda';
-  const isMe = m.nick === myNick;
-  const div = document.createElement('div');
-  div.className = `msg-bubble ${isAdmin ? 'admin-bubble' : isMe ? 'mine' : 'other'}`;
-  const displayNick = isAdmin ? 'ADMIN' : m.nick;
-  div.innerHTML = `
-    <div class="bubble-nick ${isAdmin?'admin-name':isMe?'mine-name':''}">${displayNick}</div>
-    <div class="bubble-text">${esc(m.text)}</div>
-    <div class="bubble-time">${m.timestamp}</div>`;
-  messagesDiv.appendChild(div);
-  if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
+// ══════════════════════════════════════════════════════════════════════
+// WEBRTC — CALLS
+// ══════════════════════════════════════════════════════════════════════
+
+// ── Start outgoing call ───────────────────────────────────────────────
+async function startCall(nick, withVideo) {
+  if (inCall) { alert('Already in a call.'); return; }
+  callPeer = nick; callIsVideo = withVideo; inCall = true;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:withVideo });
+  } catch(e) {
+    alert('Could not access microphone/camera: ' + e.message);
+    inCall = false; return;
+  }
+  setupPeerConn();
+  localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+  showActiveCall(nick, withVideo, false); // outgoing — show "Calling..."
+  const offer = await peerConn.createOffer();
+  await peerConn.setLocalDescription(offer);
+  wsSend({ type:'call_offer', to:nick, offer, withVideo });
+  // Auto-cancel if no answer in 40s
+  callRingTimeout = setTimeout(() => {
+    appendSystem(`${nick} didn't answer.`);
+    endCall(false);
+  }, 40000);
+}
+
+// ── Incoming call arrives ─────────────────────────────────────────────
+function handleIncomingCall(d) {
+  if (inCall) { wsSend({ type:'call_reject', to:d.from, reason:'busy' }); return; }
+  callPeer    = d.from;
+  callIsVideo = d.withVideo;
+  pendingOffer = d.offer;
+  // Populate incoming modal
+  const u = allUsers.find(u => u.nick === d.from);
+  incAvt.innerHTML = u?.photoURL ? `<img src="${u.photoURL}" alt=""/>` : d.from.charAt(0).toUpperCase();
+  incName.textContent  = d.from;
+  incLabel.textContent = `Incoming ${d.withVideo ? 'video' : 'voice'} call...`;
+  incomingCall.style.display = 'flex';
+  startRingtone();
+  // Auto-reject after 35s
+  callRingTimeout = setTimeout(() => { rejectCall(); }, 35000);
+}
+
+// ── Accept call ───────────────────────────────────────────────────────
+acceptCallBtn.addEventListener('click', async () => {
+  clearTimeout(callRingTimeout);
+  stopRingtone();
+  incomingCall.style.display = 'none';
+  inCall = true;
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:callIsVideo });
+  } catch(e) {
+    alert('Could not access mic/camera: ' + e.message);
+    inCall = false; return;
+  }
+  setupPeerConn();
+  localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+  await peerConn.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+  // flush queued ICE
+  for (const c of pendingIce) await peerConn.addIceCandidate(new RTCIceCandidate(c));
+  pendingIce = [];
+  const answer = await peerConn.createAnswer();
+  await peerConn.setLocalDescription(answer);
+  wsSend({ type:'call_answer', to:callPeer, answer });
+  showActiveCall(callPeer, callIsVideo, true);
+});
+
+// ── Reject call ───────────────────────────────────────────────────────
+rejectCallBtn.addEventListener('click', rejectCall);
+function rejectCall() {
+  clearTimeout(callRingTimeout);
+  stopRingtone();
+  incomingCall.style.display = 'none';
+  wsSend({ type:'call_reject', to:callPeer });
+  callPeer = null; pendingOffer = null; inCall = false;
+}
+
+// ── Remote accepted ────────────────────────────────────────────────────
+async function handleCallAnswer(d) {
+  clearTimeout(callRingTimeout);
+  if (!peerConn) return;
+  await peerConn.setRemoteDescription(new RTCSessionDescription(d.answer));
+  for (const c of pendingIce) await peerConn.addIceCandidate(new RTCIceCandidate(c));
+  pendingIce = [];
+  startCallTimer();
+}
+
+// ── Remote rejected / busy / offline ──────────────────────────────────
+function handleCallRejected(d) {
+  clearTimeout(callRingTimeout);
+  const reason = d.reason === 'offline' ? 'is offline' : d.reason === 'busy' ? 'is busy' : 'declined';
+  appendSystem(`${d.from} ${reason}.`);
+  endCall(false);
+}
+
+// ── Remote ended ──────────────────────────────────────────────────────
+function handleCallEnded() { endCall(false); }
+
+// ── ICE candidate ────────────────────────────────────────────────────
+async function handleIceCandidate(d) {
+  if (peerConn && peerConn.remoteDescription) {
+    try { await peerConn.addIceCandidate(new RTCIceCandidate(d.candidate)); } catch {}
+  } else {
+    pendingIce.push(d.candidate);
+  }
+}
+
+// ── Setup RTCPeerConnection ───────────────────────────────────────────
+function setupPeerConn() {
+  peerConn = new RTCPeerConnection(ICE_CFG);
+  peerConn.onicecandidate = e => {
+    if (e.candidate) wsSend({ type:'ice_candidate', to:callPeer, candidate:e.candidate });
+  };
+  peerConn.ontrack = e => {
+    remoteVideo.srcObject = e.streams[0];
+  };
+  peerConn.onconnectionstatechange = () => {
+    if (['failed','disconnected','closed'].includes(peerConn.connectionState)) handleCallEnded();
+  };
+}
+
+// ── Show active call UI ───────────────────────────────────────────────
+function showActiveCall(nick, withVideo, connected) {
+  const u = allUsers.find(u => u.nick === nick);
+  callPeerName.textContent = nick;
+  callTimerEl.textContent  = connected ? '00:00' : 'Calling...';
+  // Local video PiP
+  if (localStream) localVideo.srcObject = localStream;
+  localVideo.style.display  = withVideo ? 'block' : 'none';
+  cameraBtn.style.display   = withVideo ? 'flex'  : 'none';
+  // Remote video / voice bg
+  if (withVideo) {
+    voiceCallBg.style.display = 'none';
+    remoteVideo.style.display = 'block';
+  } else {
+    remoteVideo.style.display = 'none';
+    voiceCallBg.style.display = 'flex';
+    callAvatar.innerHTML = u?.photoURL ? `<img src="${u.photoURL}" alt=""/>` : nick.charAt(0).toUpperCase();
+  }
+  // Reset button states
+  isMuted = false; isCamOff = false;
+  muteBtn.classList.remove('toggled'); muteBtn.title = 'Mute';
+  cameraBtn.classList.remove('toggled'); cameraBtn.title = 'Camera off';
+  activeCallEl.style.display = 'flex';
+  if (connected) startCallTimer();
+}
+
+// ── End call ─────────────────────────────────────────────────────────
+endCallBtn.addEventListener('click', () => endCall(true));
+function endCall(notify) {
+  clearTimeout(callRingTimeout);
+  stopCallTimer();
+  if (notify && callPeer) wsSend({ type:'call_end', to:callPeer });
+  if (peerConn) { peerConn.close(); peerConn = null; }
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  remoteVideo.srcObject = null; localVideo.srcObject = null;
+  activeCallEl.style.display = 'none';
+  callPeer = null; inCall = false; isMuted = false; isCamOff = false;
+  pendingIce = []; pendingOffer = null;
+}
+
+// ── Mute toggle ────────────────────────────────────────────────────────
+muteBtn.addEventListener('click', () => {
+  if (!localStream) return;
+  const track = localStream.getAudioTracks()[0];
+  if (!track) return;
+  isMuted = !isMuted;
+  track.enabled = !isMuted;
+  muteBtn.classList.toggle('toggled', isMuted);
+  muteBtn.textContent = isMuted ? '🔇' : '🎤';
+  muteBtn.title = isMuted ? 'Unmute' : 'Mute';
+});
+
+// ── Camera toggle ─────────────────────────────────────────────────────
+cameraBtn.addEventListener('click', () => {
+  if (!localStream) return;
+  const track = localStream.getVideoTracks()[0];
+  if (!track) return;
+  isCamOff = !isCamOff;
+  track.enabled = !isCamOff;
+  cameraBtn.classList.toggle('toggled', isCamOff);
+  cameraBtn.textContent = isCamOff ? '🚫' : '📷';
+  cameraBtn.title = isCamOff ? 'Camera on' : 'Camera off';
+});
+
+// ── Call header buttons ───────────────────────────────────────────────
+voiceCallBtn.addEventListener('click', () => { if (currentConv) startCall(currentConv, false); });
+videoCallBtn.addEventListener('click', () => { if (currentConv) startCall(currentConv, true);  });
+
+// ── Call timer ────────────────────────────────────────────────────────
+function startCallTimer() {
+  callTimerSec = 0;
+  callTimerEl.textContent = '00:00';
+  callTimerInt = setInterval(() => {
+    callTimerSec++;
+    const m = String(Math.floor(callTimerSec/60)).padStart(2,'0');
+    const s = String(callTimerSec%60).padStart(2,'0');
+    callTimerEl.textContent = `${m}:${s}`;
+  }, 1000);
+}
+function stopCallTimer() { clearInterval(callTimerInt); callTimerInt = null; }
+
+// ── Ringtone (Web Audio API) ──────────────────────────────────────────
+function startRingtone() {
+  try {
+    ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep() {
+      if (!ringtoneCtx) return;
+      [[440,0],[480,0.5]].forEach(([freq, delay]) => {
+        const osc = ringtoneCtx.createOscillator();
+        const gain = ringtoneCtx.createGain();
+        osc.connect(gain); gain.connect(ringtoneCtx.destination);
+        osc.frequency.value = freq; osc.type = 'sine';
+        const t = ringtoneCtx.currentTime + delay;
+        gain.gain.setValueAtTime(0.35, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc.start(t); osc.stop(t + 0.4);
+      });
+    }
+    beep();
+    ringtoneTimer = setInterval(beep, 2200);
+  } catch {}
+}
+function stopRingtone() {
+  clearInterval(ringtoneTimer); ringtoneTimer = null;
+  if (ringtoneCtx) { ringtoneCtx.close().catch(()=>{}); ringtoneCtx = null; }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// VOICE MESSAGES
+// ══════════════════════════════════════════════════════════════════════
+function startRecording() {
+  if (!currentConv || !wss || wss.readyState !== WebSocket.OPEN) return;
+  navigator.mediaDevices.getUserMedia({ audio:true })
+    .then(stream => {
+      audioChunks = []; recStartTime = Date.now();
+      mediaRecorder = new MediaRecorder(stream, { mimeType: getSupportedMimeType() });
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        const dur = Math.round((Date.now() - recStartTime) / 1000);
+        if (dur < 1) return; // too short
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const b64 = reader.result.split(',')[1];
+          wsSend({ type:'dm', to:currentConv, text:'', audioData:b64, audioDuration:dur });
+        };
+        reader.readAsDataURL(blob);
+      };
+      mediaRecorder.start();
+      micBtn.classList.add('recording');
+      showRecIndicator();
+    })
+    .catch(e => alert('Mic not available: ' + e.message));
+}
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  micBtn.classList.remove('recording');
+  hideRecIndicator();
+}
+function getSupportedMimeType() {
+  const types = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
+  return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+let recIndicatorEl = null;
+function showRecIndicator() {
+  if (recIndicatorEl) return;
+  recIndicatorEl = document.createElement('div');
+  recIndicatorEl.className = 'rec-indicator';
+  recIndicatorEl.textContent = '🔴 Recording... release to send';
+  document.querySelector('.input-area').appendChild(recIndicatorEl);
+}
+function hideRecIndicator() {
+  if (recIndicatorEl) { recIndicatorEl.remove(); recIndicatorEl = null; }
+}
+
+// Hold to record on mic button
+micBtn.addEventListener('mousedown',  e => { e.preventDefault(); startRecording(); });
+micBtn.addEventListener('touchstart', e => { e.preventDefault(); startRecording(); }, { passive:false });
+micBtn.addEventListener('mouseup',    () => stopRecording());
+micBtn.addEventListener('mouseleave', () => stopRecording());
+micBtn.addEventListener('touchend',   () => stopRecording());
+
+// ══════════════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════════════
+
+function renderConvList() {
+  const q = searchQuery.toLowerCase();
+  const others = allUsers.filter(u => (!myNick || u.nick !== myNick) && (!q || u.nick.toLowerCase().includes(q)));
+  others.sort((a,b) => { if (a.online && !b.online) return -1; if (!a.online && b.online) return 1; return a.nick.localeCompare(b.nick); });
+
+  if (!others.length) {
+    convList.innerHTML = `<div style="padding:20px 14px;color:var(--muted);font-size:.82rem;text-align:center">${q ? 'No users found' : 'No users yet'}</div>`;
+    return;
+  }
+  let html = '';
+  others.forEach(u => {
+    const avt  = u.photoURL ? `<img src="${u.photoURL}" alt=""/>` : `<span>${u.nick.charAt(0).toUpperCase()}</span>`;
+    const badge = unread[u.nick] ? `<span class="unread-badge">${unread[u.nick]}</span>` : '';
+    const sub   = u.online ? 'Online now' : fmtLastSeen(u.lastSeen);
+    html += `<div class="conv-item${currentConv===u.nick?' active':''}" data-nick="${esc(u.nick)}">
+      <div class="c-avt">${avt}<span class="s-ring ${u.online?'on':'off'}"></span></div>
+      <div class="c-info"><div class="c-name">${esc(u.nick)}</div><div class="c-sub">${sub}</div></div>
+      ${badge}</div>`;
+  });
+  convList.innerHTML = html;
+  convList.querySelectorAll('.conv-item').forEach(el => {
+    el.addEventListener('click', () => { openConv(el.dataset.nick); if (isMobileView()) showChat(); });
+  });
+}
+
+function fmtLastSeen(ts) {
+  if (!ts) return 'Offline';
+  const d = Date.now()-ts;
+  if (d < 60000)    return 'Just now';
+  if (d < 3600000)  return `${Math.floor(d/60000)}m ago`;
+  if (d < 86400000) return `${Math.floor(d/3600000)}h ago`;
+  return `${Math.floor(d/86400000)}d ago`;
+}
+
+function openConv(nick) {
+  currentConv = nick; unread[nick] = 0;
+  messagesDiv.innerHTML = '';
+  const u = allUsers.find(u => u.nick === nick);
+  hdrAvt.innerHTML = u?.photoURL ? `<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>` : `<span style="font-weight:700;font-size:.9rem">${nick.charAt(0).toUpperCase()}</span>`;
+  hdrName.textContent   = nick;
+  hdrStatus.textContent = u?.online ? '🟢 Online' : `Last seen ${fmtLastSeen(u?.lastSeen)}`;
+  hdrCallBtns.style.display = 'flex';
+  msgInput.disabled = sendBtn.disabled = false;
+  msgInput.placeholder = `Message ${nick}...`;
+  if (isAdmin) renderAdminBtns(nick); else admActions.style.display = 'none';
+  if (wss?.readyState === WebSocket.OPEN) wsSend({ type:'dm_open', with:nick });
+  renderConvList(); msgInput.focus();
+}
+
+function renderAdminBtns(target) {
+  admActions.style.display = 'flex';
+  admActions.innerHTML = `
+    <button class="adm-btn warn" data-cmd="mute"   data-t="${target}">Mute</button>
+    <button class="adm-btn warn" data-cmd="unmute" data-t="${target}">Unmute</button>
+    <button class="adm-btn"     data-cmd="ban"    data-t="${target}">Ban</button>
+    <button class="adm-btn ok"  data-cmd="unban"  data-t="${target}">Unban</button>
+    <button class="adm-btn"     data-cmd="kick"   data-t="${target}">Kick</button>`;
+  admActions.querySelectorAll('.adm-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!wss || wss.readyState !== WebSocket.OPEN) return;
+      const cmd = b.dataset.cmd, t = b.dataset.t;
+      if ((cmd==='ban'||cmd==='kick') && !confirm(`${cmd} ${t}?`)) return;
+      wsSend({ type:'admin_cmd', cmd, target:t });
+    });
+  });
 }
 
 function renderDmMsg(m, scroll) {
   const isMe = m.from === myNick;
-  const div = document.createElement('div');
-  div.className = `msg-bubble ${isMe ? 'mine' : 'other'}`;
+  const div  = document.createElement('div');
+  div.className = `msg-bubble ${isMe?'mine':'other'}`;
+
+  let bodyHtml;
+  if (m.audioData) {
+    const mimeType = m.audioData.startsWith('/') ? 'audio/mp4' : m.audioData.startsWith('T') ? 'audio/ogg' : 'audio/webm';
+    const dur = m.audioDuration ? `${m.audioDuration}s` : '';
+    bodyHtml = `<div class="voice-msg-wrap">
+      <span style="font-size:1rem">🎤</span>
+      <audio controls src="data:${mimeType};base64,${m.audioData}"></audio>
+      <span class="voice-dur">${dur}</span>
+    </div>`;
+  } else {
+    bodyHtml = `<div class="b-text">${esc(m.text)}</div>`;
+  }
+
   div.innerHTML = `
-    <div class="bubble-nick ${isMe?'mine-name':''}">${isMe ? 'You' : m.from}</div>
-    <div class="bubble-text">${esc(m.text)}</div>
-    <div class="bubble-time">${m.timestamp}</div>`;
+    <div class="b-nick${isMe?' me':''}">${isMe?'You':esc(m.from)}</div>
+    ${bodyHtml}
+    <div class="b-time">${m.timestamp}</div>`;
   messagesDiv.appendChild(div);
   if (scroll) messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 function appendSystem(text) {
   const div = document.createElement('div');
-  div.className = 'system-msg';
-  div.textContent = text;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  div.className = 'system-note'; div.textContent = text;
+  messagesDiv.appendChild(div); messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
 function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── CONV LIST ────────────────────────────────────────────────────────
-function renderConvList() {
-  const q = searchQuery.toLowerCase();
-  const filtered = allUsers.filter(u => u.nick !== myNick && (!q || u.nick.toLowerCase().includes(q)));
-  
-  let html = '';
-
-  // Global Chat item
-  if (!q) {
-    html += `<div class="conv-item ${currentConv==='global'?'active':''}" data-conv="global">
-      <div class="conv-avatar">🌐</div>
-      <div class="conv-info">
-        <div class="conv-name">Global Chat</div>
-        <div class="conv-sub">Everyone</div>
-      </div>
-    </div>`;
-  }
-
-  // User items
-  filtered.forEach(u => {
-    const isAdmin = u.nick.toLowerCase() === 'nimda';
-    const avatarHtml = u.photoURL
-      ? `<img src="${u.photoURL}" alt="" />`
-      : `<span style="font-size:.9rem">${u.nick.charAt(0).toUpperCase()}</span>`;
-    const badge = unread[u.nick] ? `<span class="unread-badge">${unread[u.nick]}</span>` : '';
-    const dot = u.online ? '<span class="online-dot"></span>' : '<span class="offline-dot"></span>';
-    const lastSeen = u.online ? 'Online' : formatLastSeen(u.lastSeen);
-    html += `<div class="conv-item ${currentConv===u.nick?'active':''}" data-conv="${esc(u.nick)}">
-      <div class="conv-avatar">${avatarHtml}</div>
-      <div class="conv-info">
-        <div class="conv-name">${isAdmin?'👑 ADMIN':esc(u.nick)} ${dot}</div>
-        <div class="conv-sub">${lastSeen}</div>
-      </div>
-      ${badge}
-    </div>`;
-  });
-
-  convList.innerHTML = html;
-
-  convList.querySelectorAll('.conv-item').forEach(el => {
-    el.addEventListener('click', () => {
-      openConv(el.dataset.conv);
-      showChat();
-    });
-  });
-}
-
-function formatLastSeen(ts) {
-  if (!ts) return 'Offline';
-  const diff = Date.now() - ts;
-  if (diff < 60000) return 'Just now';
-  if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
-  return `${Math.floor(diff/86400000)}d ago`;
-}
-
-function openConv(conv) {
-  currentConv = conv;
-  unread[conv] = 0;
-  messagesDiv.innerHTML = '';
-
-  if (conv === 'global') {
-    headerAvatar.innerHTML = '💬';
-    headerName.textContent = 'Global Chat';
-    headerStatus.textContent = `${allUsers.filter(u=>u.online).length} online`;
-    if (wss?.readyState === WebSocket.OPEN) wss.send(JSON.stringify({ type:'history_req' }));
-    // reload history from server
-    wss.send(JSON.stringify({ type:'register', nick:myNick, uid:myUID, photoURL:myPhoto }));
-  } else {
-    const u = allUsers.find(u => u.nick === conv);
-    if (u?.photoURL) headerAvatar.innerHTML = `<img src="${u.photoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>`;
-    else headerAvatar.innerHTML = conv.charAt(0).toUpperCase();
-    headerName.textContent = conv.toLowerCase() === 'nimda' ? '👑 ADMIN' : conv;
-    headerStatus.textContent = u?.online ? '🟢 Online' : `Last seen ${formatLastSeen(u?.lastSeen)}`;
-    wss.send(JSON.stringify({ type:'dm_open', with: conv }));
-  }
-
-  renderConvList();
-  msgInput.focus();
-}
-
-// ── SEND ─────────────────────────────────────────────────────────────
+// ── SEND ──────────────────────────────────────────────────────────────
 function sendMessage() {
-  if (!myNick || !wss || wss.readyState !== WebSocket.OPEN) return;
-  const text = msgInput.value.trim();
-  if (!text) return;
-
-  if (currentConv === 'global') {
-    wss.send(JSON.stringify({ type:'chat', nick:myNick, text }));
-  } else {
-    wss.send(JSON.stringify({ type:'dm', to:currentConv, text }));
-  }
-  msgInput.value = '';
-  msgInput.focus();
+  if (!myNick || !currentConv || !wss || wss.readyState !== WebSocket.OPEN) return;
+  const text = msgInput.value.trim(); if (!text) return;
+  wsSend({ type:'dm', to:currentConv, text });
+  msgInput.value = ''; msgInput.focus();
 }
-
 sendBtn.addEventListener('click', sendMessage);
-msgInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
-suggestionsDiv.addEventListener('click', e => {
-  if (e.target.tagName === 'SPAN') {
-    msgInput.value = e.target.textContent.replace(/\[\w+\]/g,'').trim();
-    msgInput.focus();
-  }
-});
-searchInput.addEventListener('input', () => {
-  searchQuery = searchInput.value;
-  renderConvList();
-});
+msgInput.addEventListener('keydown', e => { if (e.key==='Enter') sendMessage(); });
+searchInput.addEventListener('input', () => { searchQuery = searchInput.value; renderConvList(); });
+
+function wsSend(obj) { if (wss?.readyState === WebSocket.OPEN) wss.send(JSON.stringify(obj)); }
 
 // ── MOBILE NAV ────────────────────────────────────────────────────────
-const sidebar    = document.querySelector('.sidebar');
-const chatPanel  = document.querySelector('.chat-panel');
-const backBtn    = document.getElementById('backBtn');
-
-function isMobile() { return window.innerWidth <= 640; }
-
-function showChat() {
-  if (!isMobile()) return;
-  sidebar.classList.add('hidden');
-  chatPanel.classList.add('visible');
-}
-function showSidebar() {
-  if (!isMobile()) return;
-  sidebar.classList.remove('hidden');
-  chatPanel.classList.remove('visible');
-}
-
+const sidebarEl  = $('sidebar'), chatPanelEl = $('chatPanel'), backBtn = $('backBtn');
+function isMobileView() { return window.innerWidth <= 640; }
+function showChat()    { if (!isMobileView()) return; sidebarEl.classList.add('hidden'); chatPanelEl.classList.add('visible'); }
+function showSidebar() { if (!isMobileView()) return; sidebarEl.classList.remove('hidden'); chatPanelEl.classList.remove('visible'); }
 backBtn.addEventListener('click', showSidebar);
-
-// patch openConv to slide on mobile
-const _openConv = openConv;
-window.openConvMobile = function(conv) {
-  _openConv(conv);
-  showChat();
-};
 </script>
 </body>
 </html>
