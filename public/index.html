@@ -17,6 +17,19 @@
 }
 html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
 
+
+/* ── PROFILE EDIT ── */
+.profile-avt-wrap{position:relative;cursor:pointer;display:inline-block;margin-bottom:10px}
+.profile-avt-wrap:hover .avt-overlay{opacity:1}
+.avt-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:1.2rem}
+.edit-field-wrap{width:100%;display:flex;gap:8px;align-items:center}
+.edit-input{flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:inherit;font-size:.87rem;outline:none;transition:border-color .2s}
+.edit-input:focus{border-color:var(--blue)}
+.edit-input::placeholder{color:var(--muted)}
+.save-btn{padding:10px 16px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:opacity .2s}
+.save-btn:hover{opacity:.85}.save-btn:disabled{opacity:.4;cursor:not-allowed}
+.profile-msg{font-size:.78rem;min-height:16px;text-align:center}
+.profile-msg.ok{color:var(--green)}.profile-msg.err{color:var(--red)}
 /* ── LOGIN TABS ── */
 .login-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px}
 .login-tab{flex:1;padding:10px;background:none;border:none;color:var(--muted);font-family:inherit;font-size:.87rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px}
@@ -440,13 +453,33 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
     <div id="tabProfile" style="display:none">
       <div class="panel-hdr"><h2>My Profile</h2></div>
       <div class="profile-wrap">
-        <div class="profile-big-avt" id="myProfileAvt">👤</div>
+
+        <!-- Avatar (click to change) -->
+        <div class="profile-avt-wrap" onclick="pickAvatar()">
+          <div class="profile-big-avt" id="myProfileAvt">👤</div>
+          <div class="avt-overlay">📷</div>
+        </div>
+        <input type="file" id="avatarFile" accept="image/*" style="display:none"/>
+
         <div class="profile-nick" id="myProfileNick">...</div>
         <div class="profile-uid"  id="myProfileUid"></div>
-        <div class="profile-stat">
+
+        <div class="profile-stat" style="margin-bottom:18px">
           <div class="profile-stat-item"><div class="num" id="statFriends">0</div><div class="lbl">Friends</div></div>
           <div class="profile-stat-item"><div class="num" id="statChats">0</div><div class="lbl">Chats</div></div>
         </div>
+
+        <!-- Change username -->
+        <div style="width:100%;margin-bottom:10px">
+          <div style="font-size:.74rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Username</div>
+          <div class="edit-field-wrap">
+            <input class="edit-input" id="nickInput" placeholder="New username..." maxlength="30" autocomplete="off"/>
+            <button class="save-btn" id="saveNickBtn">Save</button>
+          </div>
+        </div>
+
+        <div class="profile-msg" id="profileMsg"></div>
+
       </div>
     </div>
 
@@ -675,6 +708,7 @@ function initWS(){
       $('myProfileNick').textContent=myNick;
       $('myProfileUid').textContent='@'+myNick;
       updateMyProfileAvt();
+      loadCachedAvatar();   // restore photo from cache instantly
       return;
     }
     if(d.type==='kicked_session'){
@@ -687,6 +721,7 @@ function initWS(){
 
     if(d.type==='friends_update'){
       friends=d.friends||[];
+      cacheFriendAvatars(friends);   // cache all friend photos locally
       renderRequests(); renderChats();
       updateBadge();
       updateProfileStats();
@@ -711,6 +746,27 @@ function initWS(){
       const peer=d.from===myNick?d.to:d.from;
       if(currentConv===peer){ renderMsg(d,true); }
       else{ unread[peer]=(unread[peer]||0)+1; renderChats(); playNotif(); }
+      return;
+    }
+    if(d.type==='profile_updated'){
+      myNick  = d.nick;
+      myPhoto = d.photoURL;
+      $('myProfileNick').textContent = myNick;
+      $('myProfileUid').textContent  = '@' + myNick;
+      $('nickInput').value = '';
+      $('saveNickBtn').disabled = false;
+      if(myPhoto){
+        const img=`<img src="${myPhoto}" alt=""/>`;
+        $('myProfileAvt').innerHTML=img; navAvtEl.innerHTML=img;
+        // update localStorage cache with new UID key
+        try{ localStorage.setItem('avatar_'+myUID, myPhoto); }catch{}
+      }
+      showProfileMsg('Saved ✅', 'ok');
+      return;
+    }
+    if(d.type==='profile_error'){
+      showProfileMsg(d.msg, 'err');
+      $('saveNickBtn').disabled = false;
       return;
     }
     if(d.type==='system_note'){ appendSystem(d.text); return; }
@@ -1128,7 +1184,8 @@ backBtn.addEventListener('click',()=>{ panel.classList.remove('slide-out'); chat
 
 // ── HELPERS ───────────────────────────────────────────────────────────
 function avtHtml(u,size='42px'){
-  const inner=u.photoURL?`<img src="${u.photoURL}" alt=""/>`:
+  const photo = u.photoURL || getAvatar(u.nick, '');
+  const inner = photo ? `<img src="${photo}" alt=""/>` :
     `<span style="font-weight:700;font-size:.87rem">${(u.nick||'?').charAt(0).toUpperCase()}</span>`;
   const dot=`<span class="s-dot ${u.online?'on':'off'}"></span>`;
   return `<div class="uavt" style="width:${size};height:${size};flex-shrink:0">${inner}${dot}</div>`;
@@ -1143,6 +1200,111 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 function wsSend(obj){ if(wss?.readyState===WebSocket.OPEN) wss.send(JSON.stringify(obj)); }
 
 $('chatSearch').addEventListener('input',e=>{ chatQuery=e.target.value; renderChats(); });
+
+// ── PROFILE EDIT ──────────────────────────────────────────────────────
+function pickAvatar(){ $('avatarFile').click(); }
+
+$('avatarFile').addEventListener('change', async e => {
+  const file = e.target.files[0]; if(!file) return;
+  if(!file.type.startsWith('image/')){ showProfileMsg('Please pick an image file', 'err'); return; }
+  showProfileMsg('Compressing...', '');
+
+  // ── Compress & resize with canvas ───────────────────────────────────
+  // Accepts ANY file size — canvas will handle the resize
+  const compressImage = (file, maxDim=256, quality=0.82) => new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      // scale down to maxDim×maxDim keeping aspect ratio
+      let w = img.width, h = img.height;
+      if(w > maxDim || h > maxDim){
+        if(w > h){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else      { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+
+  try {
+    const dataUrl = await compressImage(file);
+    // ── Show instantly ─────────────────────────────────────────────────
+    const imgTag = `<img src="${dataUrl}" alt=""/>`;
+    $('myProfileAvt').innerHTML = imgTag;
+    navAvtEl.innerHTML = imgTag;
+    myPhoto = dataUrl;
+
+    // ── Cache in localStorage (keyed by UID) ───────────────────────────
+    // localStorage has 5MB total limit — the compressed image is ~20–60KB
+    try { localStorage.setItem('avatar_' + myUID, dataUrl); } catch(e) {
+      // storage full — clear old cached avatars then retry
+      Object.keys(localStorage).filter(k=>k.startsWith('avatar_')).forEach(k=>localStorage.removeItem(k));
+      try { localStorage.setItem('avatar_' + myUID, dataUrl); } catch {}
+    }
+
+    showProfileMsg('Saving...', '');
+    wsSend({ type:'profile_update', photoURL: dataUrl });
+  } catch(err) {
+    showProfileMsg('Failed to process image', 'err');
+    console.error(err);
+  }
+  e.target.value = '';
+});
+
+// ── Load cached avatar on startup ─────────────────────────────────────
+function loadCachedAvatar(){
+  if(!myUID) return;
+  const cached = localStorage.getItem('avatar_' + myUID);
+  if(cached && !myPhoto){
+    myPhoto = cached;
+    const imgTag = `<img src="${cached}" alt=""/>`;
+    $('myProfileAvt').innerHTML = imgTag;
+    navAvtEl.innerHTML = imgTag;
+  }
+}
+
+// ── Cache friend avatars when friends_update arrives ──────────────────
+function cacheFriendAvatars(friendList){
+  friendList.forEach(f => {
+    if(f.photoURL && f.photoURL.startsWith('data:')) {
+      try { localStorage.setItem('avatar_' + f.nick, f.photoURL); } catch {}
+    }
+  });
+}
+
+// ── Get avatar for a nick (from cache or data) ────────────────────────
+function getAvatar(nick, photoURL){
+  if(photoURL) return photoURL;
+  return localStorage.getItem('avatar_' + nick) || '';
+}
+
+$('saveNickBtn').addEventListener('click', () => {
+  const raw   = $('nickInput').value.trim();
+  const clean = raw.replace(/[^a-zA-Z0-9_]/g, '');
+  if(!clean){ showProfileMsg('Only letters, numbers and _ allowed', 'err'); return; }
+  if(clean.length < 3){ showProfileMsg('At least 3 characters needed', 'err'); return; }
+  if(clean === myNick){ showProfileMsg('That is already your username', 'err'); return; }
+  $('saveNickBtn').disabled = true;
+  showProfileMsg('Saving...', '');
+  wsSend({ type:'profile_update', nick: clean });
+});
+
+// Handle server response
+const _origOnMsg = null; // we patch the existing onmessage via an extra check in initWS
+// Instead, handle in the WS message handler by adding cases:
+// (these are injected into the existing handler below via the 'profile_updated'/'profile_error' types)
+
+function showProfileMsg(msg, type){
+  const el = $('profileMsg');
+  el.textContent = msg;
+  el.className = 'profile-msg' + (type ? ' '+type : '');
+  if(type === 'ok') setTimeout(()=>{ el.textContent=''; el.className='profile-msg'; }, 3000);
+}
 </script>
 </body>
 </html>
