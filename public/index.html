@@ -271,7 +271,7 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
 
     <div class="login-tabs">
       <button class="login-tab active" id="tabGoogle">Google</button>
-      <button class="login-tab"        id="tabPhone">Phone</button>
+      <button class="login-tab"        id="tabEmail">Email</button>
     </div>
 
     <!-- Google tab -->
@@ -283,49 +283,30 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
       </button>
     </div>
 
-    <!-- Phone tab -->
-    <div id="phonePane" style="display:none">
+    <!-- Email tab -->
+    <div id="emailPane" style="display:none">
 
-      <!-- Step 1: enter phone -->
-      <div id="phoneStep1">
-        <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px">Enter your phone number</p>
-        <div class="phone-input-wrap">
-          <select class="country-select" id="countryCode">
-            <option value="+970">🇵🇸 +970</option>
-            <option value="+972">🇮🇱 +972</option>
-            <option value="+20">🇪🇬 +20</option>
-            <option value="+962">🇯🇴 +962</option>
-            <option value="+961">🇱🇧 +961</option>
-            <option value="+963">🇸🇾 +963</option>
-            <option value="+964">🇮🇶 +964</option>
-            <option value="+966">🇸🇦 +966</option>
-            <option value="+971">🇦🇪 +971</option>
-            <option value="+90">🇹🇷 +90</option>
-            <option value="+44">🇬🇧 +44</option>
-            <option value="+1">🇺🇸 +1</option>
-            <option value="+49">🇩🇪 +49</option>
-            <option value="+33">🇫🇷 +33</option>
-          </select>
-          <input class="phone-input" id="phoneInput" type="tel" placeholder="Phone number" maxlength="15"/>
-        </div>
-        <div id="recaptcha-container"></div>
-        <button class="phone-btn" id="sendOtpBtn">Send Code</button>
+      <!-- Sign in / Sign up toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="login-tab active" id="tabSignIn" style="border-radius:8px;padding:7px;font-size:.8rem">Sign In</button>
+        <button class="login-tab"        id="tabSignUp" style="border-radius:8px;padding:7px;font-size:.8rem">Sign Up</button>
       </div>
 
-      <!-- Step 2: enter OTP -->
-      <div id="phoneStep2" style="display:none">
-        <p style="color:var(--muted);font-size:.85rem;margin-bottom:16px" id="otpSentLabel">Code sent</p>
-        <div class="otp-wrap" id="otpWrap">
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-          <input class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]"/>
-        </div>
-        <button class="phone-btn" id="verifyOtpBtn">Verify</button>
-        <button class="back-link" id="backToPhone">← Change number</button>
+      <!-- Display name (sign up only) -->
+      <div id="displayNameWrap" style="display:none;margin-bottom:10px">
+        <input class="phone-input" id="displayNameInput" type="text" placeholder="Your name (e.g. Osama)" maxlength="30" style="width:100%"/>
       </div>
+
+      <div style="margin-bottom:10px">
+        <input class="phone-input" id="emailInput" type="email" placeholder="Email address" style="width:100%"/>
+      </div>
+      <div style="margin-bottom:12px;position:relative">
+        <input class="phone-input" id="passwordInput" type="password" placeholder="Password (min 6 chars)" style="width:100%;padding-right:44px"/>
+        <button id="togglePwd" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted)">👁</button>
+      </div>
+
+      <button class="phone-btn" id="emailAuthBtn">Sign In</button>
+      <button class="back-link" id="forgotPwd">Forgot password?</button>
 
     </div>
 
@@ -574,8 +555,8 @@ const LOCK_MS = 2*60*1000;
 // ── AUTH ──────────────────────────────────────────────────────────────
 
 // Login tab switching
-$('tabGoogle').addEventListener('click',()=>{ $('tabGoogle').classList.add('active'); $('tabPhone').classList.remove('active'); $('googlePane').style.display=''; $('phonePane').style.display='none'; loginErr.textContent=''; });
-$('tabPhone').addEventListener('click', ()=>{ $('tabPhone').classList.add('active'); $('tabGoogle').classList.remove('active'); $('phonePane').style.display=''; $('googlePane').style.display='none'; loginErr.textContent=''; initRecaptcha(); });
+$('tabGoogle').addEventListener('click',()=>{ $('tabGoogle').classList.add('active'); $('tabEmail').classList.remove('active'); $('googlePane').style.display=''; $('emailPane').style.display='none'; loginErr.textContent=''; });
+$('tabEmail').addEventListener('click', ()=>{ $('tabEmail').classList.add('active'); $('tabGoogle').classList.remove('active'); $('emailPane').style.display=''; $('googlePane').style.display='none'; loginErr.textContent=''; });
 
 // Google
 googleBtn.addEventListener('click', () => {
@@ -585,88 +566,81 @@ googleBtn.addEventListener('click', () => {
     .finally(()=>{ googleBtn.disabled=false; });
 });
 
-// Phone
-let confirmResult=null, recaptchaVerifier=null, recaptchaReady=false;
+// Email / Password auth
+let emailMode = 'signin'; // 'signin' | 'signup'
 
-function initRecaptcha(){
-  if(recaptchaReady) return;
-  try {
-    recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'normal',
-      callback: () => { recaptchaReady=true; },
-      'expired-callback': () => { recaptchaReady=false; recaptchaVerifier.clear(); recaptchaReady=false; initRecaptcha(); }
-    });
-    recaptchaVerifier.render();
-  } catch(e) { console.warn('reCAPTCHA init:', e); }
-}
-
-$('sendOtpBtn').addEventListener('click', async () => {
+$('tabSignIn').addEventListener('click',()=>{
+  emailMode='signin';
+  $('tabSignIn').classList.add('active'); $('tabSignUp').classList.remove('active');
+  $('displayNameWrap').style.display='none';
+  $('emailAuthBtn').textContent='Sign In';
+  $('forgotPwd').style.display='block';
   loginErr.textContent='';
-  const cc   = $('countryCode').value;
-  const num  = $('phoneInput').value.trim().replace(/^0+/,'');
-  if(!num || num.length < 7){ loginErr.textContent='Enter a valid phone number'; return; }
-  const full = cc + num;
-  const btn  = $('sendOtpBtn');
-  btn.disabled=true; btn.textContent='Sending...';
-  try {
-    if(!recaptchaVerifier) initRecaptcha();
-    confirmResult = await auth.signInWithPhoneNumber(full, recaptchaVerifier);
-    $('phoneStep1').style.display='none';
-    $('phoneStep2').style.display='';
-    $('otpSentLabel').textContent=`Code sent to ${full}`;
-    // focus first digit
-    $('otpWrap').querySelectorAll('.otp-digit')[0].focus();
-  } catch(e) {
-    loginErr.textContent = e.message || 'Failed to send code';
-    recaptchaReady=false;
-    try{ recaptchaVerifier.clear(); }catch{}
-    recaptchaVerifier=null; recaptchaReady=false;
-    initRecaptcha();
-  } finally { btn.disabled=false; btn.textContent='Send Code'; }
+});
+$('tabSignUp').addEventListener('click',()=>{
+  emailMode='signup';
+  $('tabSignUp').classList.add('active'); $('tabSignIn').classList.remove('active');
+  $('displayNameWrap').style.display='block';
+  $('emailAuthBtn').textContent='Create Account';
+  $('forgotPwd').style.display='none';
+  loginErr.textContent='';
 });
 
-// OTP digit auto-advance
-$('otpWrap').querySelectorAll('.otp-digit').forEach((inp, i, all) => {
-  inp.addEventListener('input', () => {
-    inp.value = inp.value.replace(/[^0-9]/g,'').slice(-1);
-    if(inp.value && i < all.length-1) all[i+1].focus();
-    // auto-verify when last digit filled
-    if(i === all.length-1 && inp.value) verifyOtp();
-  });
-  inp.addEventListener('keydown', e => {
-    if(e.key==='Backspace' && !inp.value && i>0) all[i-1].focus();
-  });
-  inp.addEventListener('paste', e => {
-    e.preventDefault();
-    const pasted = (e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'');
-    all.forEach((el, j) => { el.value = pasted[j] || ''; });
-    if(pasted.length >= 6) verifyOtp();
-  });
+// Toggle password visibility
+$('togglePwd').addEventListener('click',()=>{
+  const inp=$('passwordInput');
+  inp.type=inp.type==='password'?'text':'password';
+  $('togglePwd').textContent=inp.type==='password'?'👁':'🙈';
 });
 
-async function verifyOtp(){
-  const digits = [...$('otpWrap').querySelectorAll('.otp-digit')].map(i=>i.value).join('');
-  if(digits.length < 6){ loginErr.textContent='Enter all 6 digits'; return; }
-  if(!confirmResult){ loginErr.textContent='Please request a code first'; return; }
-  const btn = $('verifyOtpBtn');
-  btn.disabled=true; btn.textContent='Verifying...';
+// Submit
+$('emailAuthBtn').addEventListener('click', async ()=>{
   loginErr.textContent='';
+  const email = $('emailInput').value.trim();
+  const pwd   = $('passwordInput').value;
+  const name  = $('displayNameInput').value.trim();
+  if(!email){ loginErr.textContent='Enter your email'; return; }
+  if(!pwd || pwd.length<6){ loginErr.textContent='Password must be at least 6 characters'; return; }
+  if(emailMode==='signup' && !name){ loginErr.textContent='Enter your name'; return; }
+  const btn=$('emailAuthBtn'); btn.disabled=true; btn.textContent='Please wait...';
   try {
-    await confirmResult.confirm(digits);
-    // onAuthStateChanged will handle the rest
-  } catch(e) {
-    loginErr.textContent = e.code==='auth/invalid-verification-code' ? 'Wrong code, try again' : e.message;
-    // clear inputs
-    $('otpWrap').querySelectorAll('.otp-digit').forEach(i=>i.value='');
-    $('otpWrap').querySelectorAll('.otp-digit')[0].focus();
-  } finally { btn.disabled=false; btn.textContent='Verify'; }
-}
-$('verifyOtpBtn').addEventListener('click', verifyOtp);
+    if(emailMode==='signup'){
+      const cred = await auth.createUserWithEmailAndPassword(email, pwd);
+      // set display name
+      await cred.user.updateProfile({ displayName: name });
+      // reload so displayName is available in onAuthStateChanged
+      await cred.user.reload();
+    } else {
+      await auth.signInWithEmailAndPassword(email, pwd);
+    }
+  } catch(e){
+    const msgs={
+      'auth/email-already-in-use':'Email already registered — sign in instead',
+      'auth/user-not-found':'No account with this email',
+      'auth/wrong-password':'Wrong password',
+      'auth/invalid-email':'Invalid email address',
+      'auth/weak-password':'Password too weak (min 6 chars)',
+      'auth/invalid-credential':'Wrong email or password',
+    };
+    loginErr.textContent = msgs[e.code] || e.message;
+  } finally { btn.disabled=false; btn.textContent=emailMode==='signup'?'Create Account':'Sign In'; }
+});
 
-$('backToPhone').addEventListener('click', () => {
-  $('phoneStep1').style.display=''; $('phoneStep2').style.display='none';
-  $('otpWrap').querySelectorAll('.otp-digit').forEach(i=>i.value='');
-  loginErr.textContent=''; confirmResult=null;
+// Enter key submits
+[$('emailInput'),$('passwordInput'),$('displayNameInput')].forEach(el=>{
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter') $('emailAuthBtn').click(); });
+});
+
+// Forgot password
+$('forgotPwd').addEventListener('click', async ()=>{
+  const email=$('emailInput').value.trim();
+  if(!email){ loginErr.textContent='Enter your email first'; return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    loginErr.style.color='var(--green)';
+    loginErr.textContent='Reset email sent — check your inbox';
+    setTimeout(()=>{ loginErr.style.color=''; },4000);
+  } catch(e){ loginErr.textContent=e.message; }
 });
 
 auth.onAuthStateChanged(user=>{
