@@ -135,6 +135,18 @@ wsss.on('connection', ws => {
           old.send(JSON.stringify({ type:'kicked_session' }));
           old.close(); clients.delete(old); break;
         }
+        // Add this case to your existing admin logic
+if (cmd === 'delete_user') {
+    await usersCol.deleteOne({ nick: target });
+    // Also clear their messages if you want a full wipe
+    await messagesCol.deleteMany({ $or: [{ from: target }, { to: target }] });
+    
+    // Kick them if they are online
+    sendTo(target, { type: 'kicked_session' });
+    
+    ws.send(JSON.stringify({ type: 'admin_ack', msg: `User ${target} deleted forever.` }));
+    await broadcastAllUsers(); // Refresh the sidebar for everyone
+}
       }
       clients.set(ws, { nick, uid, photoURL: photoURL||'' });
       await saveUser({ nick, uid, photoURL: photoURL||'', lastSeen: Date.now() });
