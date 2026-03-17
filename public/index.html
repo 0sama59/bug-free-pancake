@@ -164,6 +164,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 /* Back btn (mobile) */
 .back-btn{background:none;border:none;color:var(--text);cursor:pointer;padding:4px 8px 4px 0;align-items:center;flex-shrink:0;display:none}
 
+
+/* ══════════ PIN LOCK SCREEN ══════════ */
+#lockScreen{position:fixed;inset:0;z-index:2000;background:radial-gradient(ellipse at 60% 30%,#1e2d4a,#0b0e15 70%);display:none;flex-direction:column;align-items:center;justify-content:center}
+.lock-avatar{width:80px;height:80px;border-radius:50%;background:var(--input-bg);border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden;margin-bottom:14px;flex-shrink:0}
+.lock-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.lock-name{font-size:1.05rem;font-weight:700;margin-bottom:4px}
+.lock-sub{font-size:.8rem;color:var(--muted);margin-bottom:26px;text-align:center;max-width:220px}
+.pin-dots{display:flex;gap:14px;margin-bottom:22px;height:16px;align-items:center}
+.pin-dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:background .12s,border-color .12s}
+.pin-dot.filled{background:var(--blue);border-color:var(--blue)}
+.pin-dot.error{background:var(--red)!important;border-color:var(--red)!important}
+.pin-err{font-size:.78rem;color:var(--red);height:18px;margin-bottom:8px;text-align:center}
+.pin-pad{display:grid;grid-template-columns:repeat(3,72px);gap:10px}
+.pin-key{width:72px;height:72px;border-radius:50%;border:1px solid var(--border);background:var(--sidebar);color:var(--text);font-size:1.25rem;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .15s,transform .1s;user-select:none;line-height:1.1}
+.pin-key:hover{background:var(--input-bg)}.pin-key:active{transform:scale(.91)}
+.pin-key .ksub{font-size:.44rem;color:var(--muted);letter-spacing:.12em;margin-top:2px}
+.pin-key.del{font-size:1rem;color:var(--muted);border-color:transparent;background:transparent}
+.pin-key.del:hover{color:var(--red);background:transparent}
+.pin-setup-title{font-size:1rem;font-weight:700;margin-bottom:6px}
 /* ══════════ MOBILE ══════════ */
 @media(max-width:640px){
   .login-card{width:92%;padding:36px 24px}
@@ -287,6 +306,34 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 </div>
 
+<!-- ══ PIN LOCK SCREEN ══ -->
+<div id="lockScreen">
+  <div class="lock-avatar" id="lockAvt">👤</div>
+  <div class="lock-name"   id="lockName">...</div>
+  <div class="lock-sub"    id="lockSub">Enter your PIN</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-err" id="pinErr"></div>
+  <div class="pin-pad" id="pinPad">
+    <button class="pin-key" data-k="1">1<span class="ksub"></span></button>
+    <button class="pin-key" data-k="2">2<span class="ksub">ABC</span></button>
+    <button class="pin-key" data-k="3">3<span class="ksub">DEF</span></button>
+    <button class="pin-key" data-k="4">4<span class="ksub">GHI</span></button>
+    <button class="pin-key" data-k="5">5<span class="ksub">JKL</span></button>
+    <button class="pin-key" data-k="6">6<span class="ksub">MNO</span></button>
+    <button class="pin-key" data-k="7">7<span class="ksub">PQRS</span></button>
+    <button class="pin-key" data-k="8">8<span class="ksub">TUV</span></button>
+    <button class="pin-key" data-k="9">9<span class="ksub">WXYZ</span></button>
+    <div></div>
+    <button class="pin-key" data-k="0">0</button>
+    <button class="pin-key del" id="pinDel">⌫</button>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
@@ -383,6 +430,7 @@ auth.onAuthStateChanged(user => {
     }
     loginScreen.style.display = 'none'; app.classList.add('show');
     initWS();
+    if (window.__startLockTimer) window.__startLockTimer();
   } else {
     loginScreen.style.display = 'flex'; app.classList.remove('show');
     myNick = myUID = myPhoto = myDisplayName = null; isAdmin = false;
@@ -742,8 +790,9 @@ micBtn.addEventListener('touchend',   () => stopRecording());
 
 function renderConvList() {
   const q = searchQuery.toLowerCase();
-  const others = allUsers.filter(u => (!myNick || u.nick !== myNick) && (!q || u.nick.toLowerCase().includes(q)));
-  others.sort((a,b) => { if (a.online && !b.online) return -1; if (!a.online && b.online) return 1; return a.nick.localeCompare(b.nick); });
+  // guard: skip any user record missing a nick (old/corrupt DB entries)
+  const others = allUsers.filter(u => u.nick && (!myNick || u.nick !== myNick) && (!q || u.nick.toLowerCase().includes(q)));
+  others.sort((a,b) => { if (a.online && !b.online) return -1; if (!a.online && b.online) return 1; return (a.nick||'').localeCompare(b.nick||''); });
 
   if (!others.length) {
     convList.innerHTML = `<div style="padding:20px 14px;color:var(--muted);font-size:.82rem;text-align:center">${q ? 'No users found' : 'No users yet'}</div>`;
@@ -862,6 +911,158 @@ function isMobileView() { return window.innerWidth <= 640; }
 function showChat()    { if (!isMobileView()) return; sidebarEl.classList.add('hidden'); chatPanelEl.classList.add('visible'); }
 function showSidebar() { if (!isMobileView()) return; sidebarEl.classList.remove('hidden'); chatPanelEl.classList.remove('visible'); }
 backBtn.addEventListener('click', showSidebar);
+
+// ══════════════════════════════════════════════════════════════════════
+// PIN LOCK SCREEN
+// ══════════════════════════════════════════════════════════════════════
+const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes inactivity → lock
+const PIN_KEY         = 'mustachat_pin';
+const SETUP_KEY       = 'mustachat_pin_setup';
+
+const lockScreen  = $('lockScreen');
+const lockAvt     = $('lockAvt');
+const lockName    = $('lockName');
+const lockSub     = $('lockSub');
+const pinDots     = [$('pd0'), $('pd1'), $('pd2'), $('pd3')];
+const pinErr      = $('pinErr');
+const pinDel      = $('pinDel');
+
+let pinBuffer        = '';
+let lockTimerHandle  = null;
+let isLocked         = false;
+let pinSetupStep     = 0;   // 0=enter existing, 1=choose new, 2=confirm new
+let pinSetupFirst    = '';
+
+function getSavedPin()  { return localStorage.getItem(PIN_KEY) || ''; }
+function hasPinSetup()  { return !!localStorage.getItem(SETUP_KEY); }
+
+// ── Lock / unlock ──────────────────────────────────────────────────────
+function lockApp() {
+  if (isLocked || !auth.currentUser) return;
+  isLocked = true;
+  const u = auth.currentUser;
+  lockAvt.innerHTML  = u.photoURL ? `<img src="${u.photoURL}" alt=""/>` : '🔒';
+  lockName.textContent = myNick || u.displayName || 'You';
+
+  if (!hasPinSetup()) {
+    // First time: ask them to set a PIN
+    pinSetupStep = 1;
+    lockSub.textContent = 'Create a 4-digit PIN';
+  } else {
+    pinSetupStep = 0;
+    lockSub.textContent = 'Enter your PIN to unlock';
+  }
+  pinBuffer = ''; pinSetupFirst = '';
+  renderPinDots(); pinErr.textContent = '';
+  lockScreen.style.display = 'flex';
+}
+
+function unlockApp() {
+  isLocked = false;
+  lockScreen.style.display = 'none';
+  resetLockTimer();
+}
+
+// ── Activity tracking ──────────────────────────────────────────────────
+function resetLockTimer() {
+  clearTimeout(lockTimerHandle);
+  if (!auth.currentUser) return;
+  lockTimerHandle = setTimeout(lockApp, LOCK_TIMEOUT_MS);
+}
+['mousemove','mousedown','keydown','touchstart','scroll'].forEach(ev =>
+  document.addEventListener(ev, resetLockTimer, { passive:true })
+);
+
+// ── PIN pad logic ──────────────────────────────────────────────────────
+document.querySelectorAll('.pin-key[data-k]').forEach(btn => {
+  btn.addEventListener('click', () => pinPress(btn.dataset.k));
+});
+pinDel.addEventListener('click', () => {
+  pinBuffer = pinBuffer.slice(0, -1);
+  renderPinDots(); pinErr.textContent = '';
+});
+// keyboard support
+document.addEventListener('keydown', e => {
+  if (!isLocked) return;
+  if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+  if (e.key === 'Backspace') { pinBuffer = pinBuffer.slice(0,-1); renderPinDots(); }
+});
+
+function pinPress(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  renderPinDots();
+  if (pinBuffer.length === 4) setTimeout(evaluatePin, 120);
+}
+
+function renderPinDots() {
+  pinDots.forEach((d, i) => {
+    d.classList.toggle('filled', i < pinBuffer.length);
+    d.classList.remove('error');
+  });
+}
+
+function evaluatePin() {
+  if (pinSetupStep === 1) {
+    // First step of setup: store the first entry
+    pinSetupFirst = pinBuffer;
+    pinBuffer = '';
+    lockSub.textContent = 'Confirm your PIN';
+    pinSetupStep = 2;
+    renderPinDots();
+    return;
+  }
+
+  if (pinSetupStep === 2) {
+    // Confirm step
+    if (pinBuffer === pinSetupFirst) {
+      localStorage.setItem(PIN_KEY, pinBuffer);
+      localStorage.setItem(SETUP_KEY, '1');
+      pinErr.textContent = '';
+      lockSub.textContent = 'PIN set! ✅';
+      setTimeout(unlockApp, 700);
+    } else {
+      shakeError('PINs do not match. Try again.');
+      pinSetupFirst = ''; pinSetupStep = 1;
+      lockSub.textContent = 'Create a 4-digit PIN';
+    }
+    return;
+  }
+
+  // Normal unlock
+  if (pinBuffer === getSavedPin()) {
+    pinErr.textContent = '';
+    unlockApp();
+  } else {
+    shakeError('Wrong PIN. Try again.');
+  }
+}
+
+function shakeError(msg) {
+  pinDots.forEach(d => d.classList.add('error'));
+  pinErr.textContent = msg;
+  pinBuffer = '';
+  setTimeout(() => { pinDots.forEach(d => d.classList.remove('error')); renderPinDots(); }, 600);
+}
+
+// Lock on page visibility change (user switches tabs)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) resetLockTimer();
+});
+
+// Start timer once user is authenticated (hooked into existing auth handler)
+const _origAuthChange = auth.onAuthStateChanged;
+// We override by calling resetLockTimer after login — done in auth handler below
+// (We patch the existing auth handler by adding resetLockTimer call there)
+// Actually we just call it from the existing handler via a global flag:
+window.__startLockTimer = function() { resetLockTimer(); };
+
+// ── Change PIN option (call from console or add a button later) ────────
+window.changePIN = function() {
+  if (!auth.currentUser) return;
+  localStorage.removeItem(SETUP_KEY);
+  lockApp();
+};
 </script>
 </body>
 </html>
