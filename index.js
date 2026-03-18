@@ -1,14 +1,39 @@
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const { MongoClient } = require('mongodb');
-const https = require('https');
-const http  = require('http');
+const https    = require('https');
+const http     = require('http');
+const webpush  = require('web-push');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 app.use(express.static('public'));
+app.get('/api/push/vapid-public', (_req, res) => res.json({ key: VAPID_PUBLIC }));
 
 app.get('/ping', (_req, res) => res.send('pong'));
+app.use(express.json({ limit: '5mb' }));
+
+// ── VAPID (Web Push) ──────────────────────────────────────────────────
+// Generate once: node -e "const wp=require('web-push');const k=wp.generateVAPIDKeys();console.log(JSON.stringify(k))"
+// Then set VAPID_PUBLIC and VAPID_PRIVATE env vars on Render
+const VAPID_PUBLIC  = process.env.VAPID_PUBLIC  || '';
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE || '';
+const VAPID_EMAIL   = process.env.VAPID_EMAIL   || 'mailto:admin@mustachat.com';
+
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
+  console.log('Web Push ready');
+} else {
+  console.warn('VAPID keys not set — push notifications disabled');
+}
+
+// REST endpoint to save push subscription
+app.post('/api/push/subscribe', async (req, res) => {
+  const { uid, subscription } = req.body;
+  if (!uid || !subscription) return res.status(400).json({ error: 'missing fields' });
+  await usersCol.updateOne({ uid }, { $set: { pushSub: subscription } }, { upsert: false });
+  res.json({ ok: true });
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
@@ -129,6 +154,20 @@ async function saveUser(u) {
   await usersCol.updateOne({ uid: u.uid }, { $set: u }, { upsert: true });
 }
 
+async function sendPush(toNick, payload) {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;
+  const user = await usersCol.findOne({ nick: toNick });
+  if (!user?.pushSub) return;
+  try {
+    await webpush.sendNotification(user.pushSub, JSON.stringify(payload));
+  } catch (e) {
+    // subscription expired/invalid — remove it
+    if (e.statusCode === 410 || e.statusCode === 404) {
+      await usersCol.updateOne({ nick: toNick }, { $unset: { pushSub: '' } });
+    }
+  }
+}
+
 // ── HELPERS ────────────────────────────────────────────────────────────
 function sendTo(nick, payload) {
   for (const [ws, info] of clients) {
@@ -234,7 +273,17 @@ wsss.on('connection', ws => {
       for (const [cws, info] of clients) {
         if (info?.nick === data.to && cws.readyState === cws.OPEN) { cws.send(JSON.stringify({ ...data, from: me.nick })); ok=true; break; }
       }
-      if (!ok && data.type === 'call_offer') ws.send(JSON.stringify({ type:'call_reject', from:data.to, reason:'offline' }));
+      if (!ok && data.type === 'call_offer') {
+        // send push notification for missed call
+        await sendPush(data.to, {
+          type: 'call',
+          title: `📞 ${me.nick} is calling`,
+          body: `${me.nick} wants to ${data.withVideo ? 'video' : 'voice'} call you`,
+          from: me.nick,
+          photoURL: me.photoURL || ''
+        });
+        ws.send(JSON.stringify({ type:'call_reject', from:data.to, reason:'offline' }));
+      }
       return;
     }
 
@@ -254,10 +303,25 @@ wsss.on('connection', ws => {
       const msg = { from:me.nick, to:data.to, text:data.text||'', timestamp:ts,
         ...(data.audioData ? { audioData:data.audioData, audioDuration:data.audioDuration||0 } : {}) };
       await addMessage(getDmKey(me.nick, data.to), msg);
+      let delivered = false;
       for (const [cws, info] of clients) {
-        if (info?.nick === data.to && cws.readyState === cws.OPEN) { cws.send(JSON.stringify({ type:'dm_receive', ...msg })); break; }
+        if (info?.nick === data.to && cws.readyState === cws.OPEN) {
+          cws.send(JSON.stringify({ type:'dm_receive', ...msg }));
+          delivered = true; break;
+        }
       }
       ws.send(JSON.stringify({ type:'dm_receive', ...msg }));
+      // push if recipient is offline
+      if (!delivered) {
+        const body = msg.audioData ? '🎤 Voice message' : msg.text;
+        await sendPush(data.to, {
+          type: 'message',
+          title: me.nick,
+          body: body.length > 80 ? body.slice(0,80)+'…' : body,
+          from: me.nick,
+          photoURL: me.photoURL || ''
+        });
+      }
       return;
     }
 
