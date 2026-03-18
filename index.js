@@ -13,7 +13,7 @@ app.get('/api/push/vapid-public', (_req, res) => res.json({ key: VAPID_PUBLIC })
 app.get('/ping', (_req, res) => res.send('pong'));
 app.use(express.json({ limit: '5mb' }));
 
-// ── VAPID (Web Push) ──────────────────────────────────────────────────
+// ── VAPID (Web Push) ─────────────────────────────────────────────────
 // Generate once: node -e "const wp=require('web-push');const k=wp.generateVAPIDKeys();console.log(JSON.stringify(k))"
 // Then set VAPID_PUBLIC and VAPID_PRIVATE env vars on Render
 const VAPID_PUBLIC  = process.env.VAPID_PUBLIC  || '';
