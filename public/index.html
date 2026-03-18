@@ -730,6 +730,8 @@ auth.onAuthStateChanged(user=>{
     if(myPhoto){ navAvtEl.innerHTML=`<img src="${myPhoto}" alt=""/>`; }
     initWS();
     resetLockTimer();
+    // Register push after a short delay (so SW has time to install)
+    setTimeout(registerPush, 2000);
   } else {
     loginScreen.style.display='flex'; appEl.classList.remove('show');
     myNick=myUID=myPhoto=myDisplayName=null; isAdmin=false;
@@ -1362,6 +1364,48 @@ setVH();
 window.addEventListener('resize', setVH);
 // Also fire on orientationchange with a small delay
 window.addEventListener('orientationchange', () => setTimeout(setVH, 300));
+
+// ── WEB PUSH NOTIFICATIONS ────────────────────────────────────────────
+async function registerPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  try {
+    // Register service worker
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    console.log('SW registered');
+
+    // Ask permission
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { console.log('Push permission denied'); return; }
+
+    // Get VAPID public key from server
+    const res  = await fetch('/api/push/vapid-public');
+    const { key } = await res.json();
+    if (!key) { console.warn('No VAPID key — push disabled'); return; }
+
+    // Subscribe
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key)
+    });
+
+    // Save subscription to server (linked to this user's UID)
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: myUID, subscription: sub.toJSON() })
+    });
+    console.log('Push subscription saved');
+  } catch (e) {
+    console.warn('Push setup failed:', e.message);
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
 </script>
 </body>
 </html>
