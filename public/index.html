@@ -15,7 +15,9 @@
   --text:#e2e8f0;--muted:#64748b;--soft:#94a3b8;
   --nav-w:64px;
 }
-html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
+/* Android Chrome dynamic toolbar fix */
+#app{height:100dvh!important;}
 
 
 /* ── PROFILE EDIT ── */
@@ -270,6 +272,7 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
     overflow:hidden;
     display:flex;flex-direction:column;
     background:var(--bg);
+    height:calc(var(--vh,1vh)*100 - 60px);
   }
   .panel.slide-out{transform:translateX(-100%);pointer-events:none}
 
@@ -277,6 +280,7 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
     position:fixed;
     top:0;left:0;right:0;
     bottom:60px;
+    height:calc(var(--vh,1vh)*100 - 60px);
     transform:translateX(100%);
     transition:transform .25s ease;
     display:flex;flex-direction:column;
@@ -285,26 +289,25 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
   }
   .chat-area.slide-in{transform:translateX(0)}
 
-  /* header fixed height */
   .chat-hdr{flex-shrink:0}
 
-  /* input area pinned to bottom, fixed height */
   .chat-area .input-area{
     flex-shrink:0;
     position:relative;
     z-index:2;
+    /* keep input above keyboard on Android */
+    padding-bottom:env(safe-area-inset-bottom, 0px);
   }
 
-  /* messages fills ALL remaining space between header and input */
   .chat-area #messages{
     flex:1;
     min-height:0;
     overflow-y:auto;
     -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
   }
 
-  /* bottom nav fixed at very bottom */
-  .bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;z-index:30}
+  .bottom-nav{display:flex!important;position:fixed;bottom:0;left:0;right:0;z-index:30;padding-bottom:env(safe-area-inset-bottom,0px)}
 
   .login-card{width:92%;padding:36px 22px}
 }
@@ -1347,6 +1350,18 @@ function showProfileMsg(msg, type){
   el.className = 'profile-msg' + (type ? ' '+type : '');
   if(type === 'ok') setTimeout(()=>{ el.textContent=''; el.className='profile-msg'; }, 3000);
 }
+
+// ── ANDROID VIEWPORT FIX ──────────────────────────────────────────────
+// Android Chrome's dynamic address bar changes window.innerHeight constantly.
+// We set --vh CSS variable to the REAL visible height and update on resize.
+function setVH(){
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+setVH();
+window.addEventListener('resize', setVH);
+// Also fire on orientationchange with a small delay
+window.addEventListener('orientationchange', () => setTimeout(setVH, 300));
 </script>
 </body>
 </html>
