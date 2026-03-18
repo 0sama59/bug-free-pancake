@@ -258,10 +258,16 @@ html,body{height:100%;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif
   :root{--nav-w:0px}
   #app.show{flex-direction:column;position:relative}
   .left-nav{display:none}
-  .panel{width:100%;min-width:unset;height:100%;position:absolute;inset:0;z-index:10;transition:transform .25s ease}
+  /* panel fills screen but leaves room for bottom nav */
+  .panel{width:100%;min-width:unset;position:absolute;top:0;left:0;right:0;bottom:60px;z-index:10;transition:transform .25s ease;overflow:hidden;display:flex;flex-direction:column}
   .panel.slide-out{transform:translateX(-100%);pointer-events:none}
-  .chat-area{position:absolute;inset:0;transform:translateX(100%);transition:transform .25s ease}
+  /* chat area fills screen but leaves room for bottom nav */
+  .chat-area{position:absolute;top:0;left:0;right:0;bottom:60px;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column}
   .chat-area.slide-in{transform:translateX(0)}
+  /* messages takes remaining space */
+  .chat-area #messages{flex:1;min-height:0;overflow-y:auto}
+  /* input bar stays at bottom of chat area, above bottom nav */
+  .chat-area .input-area{flex-shrink:0}
   /* bottom nav */
   .bottom-nav{display:flex!important}
   .login-card{width:92%;padding:36px 22px}
