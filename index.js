@@ -17,7 +17,7 @@ const server = app.listen(PORT, () => {
     setInterval(() => {
       const mod = RENDER_URL.startsWith('https') ? https : http;
       mod.get(`${RENDER_URL}/ping`, r => r.resume()).on('error', () => {});
-    }, 60 * 1000); // Updated to 1 minute ⚡
+    }, 10 * 60 * 1000);
   }
 });
 
@@ -27,8 +27,32 @@ const MONGO_URI = process.env.MONGO_URI;
 const ADMIN_UID = '4Nq6FGvrLDUzJWJypPOg6MywiMl1';
 const MAX_MSGS  = 100;
 
-let db, messagesCol, usersCol, bansCol, friendsCol;
+let db, messagesCol, usersCol, bansCol, friendsCol, countersCol;
 const clients = new Map(); // ws → { nick, uid, photoURL }
+
+// ── NICK ──────────────────────────────────────────────────────────────
+function getFirstName(displayName) {
+  return (displayName || 'User').split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, '') || 'User';
+}
+
+async function nextSequentialNick(firstName) {
+  // atomically increment counter for this firstName prefix
+  const result = await countersCol.findOneAndUpdate(
+    { _id: firstName },
+    { $inc: { seq: 1 } },
+    { upsert: true, returnDocument: 'after' }
+  );
+  const seq = result.seq;
+  return `${firstName}_${String(seq).padStart(4, '0')}`;
+}
+
+async function getOrCreateNick(uid, displayName) {
+  const existing = await usersCol.findOne({ uid });
+  if (existing?.nick) return existing.nick;
+  const firstName = getFirstName(displayName);
+  const nick = await nextSequentialNick(firstName);
+  return nick;
+}
 
 // ── DB ────────────────────────────────────────────────────────────────
 async function connectDB() {
@@ -39,23 +63,29 @@ async function connectDB() {
   usersCol    = db.collection('users');
   bansCol     = db.collection('bans');
   friendsCol  = db.collection('friends');
+  countersCol = db.collection('counters');
   console.log('MongoDB connected');
   // clean corrupt records
   await usersCol.deleteMany({ $or: [{ nick: null }, { nick: '' }, { nick: { $exists: false } }] });
+
+  // ── ONE-TIME MIGRATION: rename full-name nicks → Firstname_0001 ──────
+  const badNicks = await usersCol.find({ nick: { $regex: ' ' } }).toArray();
+  for (const user of badNicks) {
+    const oldNick = user.nick;
+    const firstName = getFirstName(oldNick);
+    const newNick = await nextSequentialNick(firstName);
+
+    await usersCol.updateOne({ uid: user.uid }, { $set: { nick: newNick } });
+    await messagesCol.updateMany({ from: oldNick }, { $set: { from: newNick } });
+    await messagesCol.updateMany({ to:   oldNick }, { $set: { to:   newNick } });
+    await friendsCol.updateMany({ userA: oldNick }, { $set: { userA: newNick } });
+    await friendsCol.updateMany({ userB: oldNick }, { $set: { userB: newNick } });
+    await friendsCol.updateMany({ requestedBy: oldNick }, { $set: { requestedBy: newNick } });
+    console.log(`Migrated: "${oldNick}" → "${newNick}"`);
+  }
+  if (badNicks.length) console.log(`Migration done: ${badNicks.length} user(s) renamed.`);
 }
 
-// ── NICK ──────────────────────────────────────────────────────────────
-function makeNick(displayName) {
-  const first = (displayName || 'User').split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, '');
-  return `${first || 'User'}_${Math.floor(1000 + Math.random() * 9000)}`;
-}
-async function getOrCreateNick(uid, displayName) {
-  const existing = await usersCol.findOne({ uid });
-  if (existing?.nick) return existing.nick;
-  let nick, attempts = 0;
-  do { nick = makeNick(displayName); } while (await usersCol.findOne({ nick }) && ++attempts < 20);
-  return nick;
-}
 
 // ── BANS ──────────────────────────────────────────────────────────────
 async function isBanned(nick) {
@@ -231,6 +261,57 @@ wsss.on('connection', ws => {
       return;
     }
 
+
+    // ── PROFILE UPDATE (username + photo) ────────────────────────────
+    if (data.type === 'profile_update') {
+      const me = clients.get(ws); if (!me) return;
+      const newNick  = (data.nick  || '').trim().replace(/[^a-zA-Z0-9_]/g, '');
+      const newPhoto = (data.photoURL || '').trim();
+      const oldNick  = me.nick;
+
+      // ── Validate nick ──
+      if (newNick && newNick !== oldNick) {
+        if (newNick.length < 3 || newNick.length > 30) {
+          ws.send(JSON.stringify({ type:'profile_error', msg:'Username must be 3–30 characters' })); return;
+        }
+        const taken = await usersCol.findOne({ nick: newNick });
+        if (taken) { ws.send(JSON.stringify({ type:'profile_error', msg:'Username already taken' })); return; }
+
+        // rename everywhere in DB
+        await usersCol.updateOne({ uid: me.uid }, { $set: { nick: newNick } });
+        await messagesCol.updateMany({ from: oldNick }, { $set: { from: newNick } });
+        await messagesCol.updateMany({ to:   oldNick }, { $set: { to:   newNick } });
+        await friendsCol.updateMany({ userA: oldNick }, { $set: { userA: newNick } });
+        await friendsCol.updateMany({ userB: oldNick }, { $set: { userB: newNick } });
+        await friendsCol.updateMany({ requestedBy: oldNick }, { $set: { requestedBy: newNick } });
+        // rename key fields in message keys
+        await messagesCol.updateMany(
+          { key: { $regex: oldNick } },
+          [{ $set: { key: { $replaceAll: { input: '$key', find: oldNick, replacement: newNick } } } }]
+        );
+        await bansCol.updateOne({ nick: oldNick }, { $set: { nick: newNick } });
+
+        // update in-memory client record
+        me.nick = newNick;
+        clients.set(ws, me);
+      }
+
+      // ── Update photo ──
+      if (newPhoto !== undefined) {
+        await usersCol.updateOne({ uid: me.uid }, { $set: { photoURL: newPhoto } });
+        me.photoURL = newPhoto;
+        clients.set(ws, me);
+      }
+
+      // ── Confirm back to client ──
+      ws.send(JSON.stringify({ type:'profile_updated', nick: me.nick, photoURL: me.photoURL }));
+
+      // ── Notify friends so their sidebar updates ──
+      const friendList = await getFriendList(me.nick);
+      for (const f of friendList) pushFriendsUpdate(f.nick);
+      await pushFriendsUpdate(me.nick);
+      return;
+    }
     // ── ADMIN: DELETE USER ────────────────────────────────────────────
     if (data.type === 'admin_delete_user') {
       const me = clients.get(ws); if (!me || me.uid !== ADMIN_UID) return;
